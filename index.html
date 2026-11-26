@@ -163,6 +163,14 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .bi em{font-style:normal;font-weight:700}.t-p{color:var(--lava)}.t-v{color:var(--sea)}.t-a{color:#7a5cc7}.t-m{color:var(--leaf)}.t-b{color:#c98a12}
 :root[data-theme=dark] .t-v{color:#6fd0dd}
 .dateinp{min-height:44px;border-radius:12px;border:1px solid var(--line);padding:0 12px;font:16px Inter,sans-serif;background:var(--surf2);color:var(--ink)}
+.locbar{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:8px 10px 8px 12px;border-radius:14px;background:var(--surf);border:1px solid var(--line);font-size:14px;min-height:52px;flex-wrap:wrap}
+.locbar:empty{display:none}
+.li{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surf2);color:var(--mute)}.li svg{width:18px;height:18px}.li.on{background:#2f7cf6;color:#fff}
+.lt{flex:1 1 200px}.lt small{color:var(--mute)}.lt a{color:var(--lava);font-weight:700}
+.btn.sm{min-height:40px;padding:0 14px;font-size:14px;border-radius:12px}
+.dist{flex:none;font:600 12px Inter,sans-serif;color:#2f7cf6;white-space:nowrap}.dist:empty{display:none}
+.vrow .dist{margin-left:4px}.vrow .dd{color:var(--mute)!important}
+.stops .dist{margin-left:4px}
 .note{margin:12px 0 0;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,var(--lava) 12%,var(--surf));font-size:15px;display:flex;gap:10px}
 .note b{color:var(--lava)}
 
@@ -254,6 +262,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
 <div class="tabs"><nav aria-label="Secciones" id="tabs"></nav></div>
 
 <main class="wrap">
+  <div class="locbar" id="locbar"></div>
   <section class="view" id="v-dias" aria-label="Días">
     <div class="week" role="tablist" id="week" aria-label="Días del viaje"></div>
     <div class="daygrid" id="day"></div>
@@ -277,7 +286,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
   </section>
 
   <section class="view" id="v-visitados" aria-label="Visitados">
-    <div class="vh"><div><h2>Sitios visitados</h2><p>Marca cada sitio con el check en el día o aquí. Se guarda en este móvil.</p></div></div>
+    <div class="vh"><div><h2>Sitios visitados</h2><p>Marca cada sitio con el check en el día o aquí. Se guarda en este navegador.</p></div><button type="button" class="btn ghost" id="vsort" hidden>Ordenar por cercanía</button></div>
     <div class="visgrid"><div class="panel"><div class="vprog" id="vprog"></div><div class="minimap"><svg id="vmap" viewBox="0 0 300 420" role="img" aria-label="Mapa de sitios visitados y pendientes"></svg></div><p class="fine"><span class="dotv on"></span> visitado <span class="dotv"></span> pendiente</p></div><div id="vlist"></div></div>
   </section>
 
@@ -308,21 +317,14 @@ const D=[
   ['20:15','Llegada a Los Cancajos','Pequeño núcleo turístico con playa de arena negra y paseo marítimo, entre el aeropuerto y Santa Cruz.','hotel'],
   ['21:00','Cena y descanso','Los Cancajos tiene varios restaurantes junto al paseo.','hotel']],
   note:'En La Palma casi todo se ve en coche: alquilarlo desde el aeropuerto es lo más práctico.'},
- {d:'d2',k:'Día 2',t:'Al techo de la isla',s:'Subida por la LP-4 al Roque y bajada a Santa Cruz.',stops:['andenes','roque','sc'],sub:['balc','salaz','plesp','stodom','sfran','scat','barco'],drive:'≈3 h de coche en total, carretera de montaña',it:[
+ {d:'d2',k:'Día 2',t:'Al techo de la isla',s:'Subida por la LP-4 al Roque de los Muchachos y comida en Santa Cruz a la bajada.',stops:['andenes','roque'],drive:'≈3 h de coche en total, carretera de montaña',it:[
   ['9:00','Salida por Santa Cruz y la LP-4','≈1 h 30 de curvas. Mirad el estado de la LP-4 en la web del IAC antes de salir.',null],
   ['10:20','Mirador de Los Andenes','Primera asomada a la Caldera de Taburiente, justo antes de la cima.','andenes'],
   ['10:45','Roque de los Muchachos','2.426 m, el punto más alto de la isla, con los telescopios alrededor. Frío y viento: abrigo, gorro y gafas de sol.','roque'],
   ['12:00','Bajada a Santa Cruz','≈1 h 15 por la misma carretera.',null],
-  ['13:30','Comida en Santa Cruz','','sc'],
-  ['15:30','Ruta a pie por Santa Cruz','Unos 2,5 km por el casco histórico, de sur a norte, casi todo llano y peatonal. Aparcad al sur de la Avenida Marítima. En domingo las tiendas cierran, pero las plazas y calles están tranquilas para pasear.','sc'],
-  ['15:40','Balcones de la Avenida Marítima','La imagen más famosa de la ciudad: casas con balcones de madera de colores frente al mar.','balc'],
-  ['16:00','Calle Real y Casa Salazar','La antigua Calle Real (calles O’Daly y Anselmo Pérez de Brito) es el eje del casco. En el n.º 22 está la Casa Salazar, casona noble del siglo XVII con patio central.','salaz'],
-  ['16:20','Plaza de España','Ayuntamiento renacentista, iglesia de El Salvador y fuente: uno de los conjuntos renacentistas más destacados de Canarias.','plesp'],
-  ['16:40','Plaza de Santo Domingo','Subiendo las escaleras desde la Plaza de España, una plaza tranquila y con sombra en la parte alta, con la iglesia de Santo Domingo.','stodom'],
-  ['17:00','Plaza de San Francisco','Iglesia renacentista y antiguo convento franciscano, hoy Museo Insular, con un patio de naranjos.','sfran'],
-  ['17:20','Castillo de Santa Catalina','Fortaleza costera de planta cuadrada con cuatro baluartes, construida contra los corsarios. Visita gratuita; comprobad el horario.','scat'],
-  ['17:40','Plaza de la Alameda y Barco de la Virgen','Réplica a tamaño real de la nao Santa María, levantada en 1940. Por dentro es el Museo Naval, que en domingo cierra: se visita el día 7.','barco']],
-  note:'Mejor hacer este día en fin de semana: de lunes a viernes la LP-4 puede tener cortes por obras.'},
+  ['13:30','Comida en Santa Cruz','Solo parada para comer: la ciudad se recorre a fondo el día 7, con museos y tiendas abiertos.','sc'],
+  ['15:30','Vuelta al alojamiento','≈10 min. Tarde de descanso tras la subida al Roque.',null]],
+  note:'Mejor hacer este día en fin de semana: de lunes a viernes la LP-4 puede tener cortes por obras. Santa Cruz se visita a fondo el día 7: ruta a pie por el casco, Museo Naval y Museo Insular.'},
  {d:'d3',k:'Día 3',t:'Ballenas y costa oeste',s:'Barco de las 12:00 en Tazacorte, el pueblo en la cueva del Porís y atardecer en El Time.',stops:['taz','poris','time'],drive:'≈2 h 15 de coche en total',it:[
   ['10:40','Salida hacia el Puerto de Tazacorte','≈50 min por el túnel de la LP-3. Aparcad y estad en el puerto a las 11:40.',null],
   ['12:00','Avistamiento de ballenas y delfines','Excursión contratada en barco con fondo de cristal (≈2–3 h). Si os mareáis en barco, prevenidlo antes de subir.','taz','Excursión'],
@@ -358,12 +360,19 @@ const D=[
   ['15:45','Mirador de La Cumbrecita','Asomada a la Caldera desde el sur. Punto de información abierto hasta las 18:30.','cumb'],
   ['16:00','Paseo al Lomo de las Chozas','Ruta oficial del Parque Nacional: el primer kilómetro es una pista casi llana, apta para cualquiera. El mirador de las Chozas tiene vistas a toda la Caldera.','chozas'],
   ['16:45','Mirador de los Roques','Vuelta a La Cumbrecita por este mirador, cerrando el circuito. Por la tarde suele haber menos gente que a mediodía y mejor luz. Calzado deportivo. Vuelta al hotel ≈35 min.','roques']]},
- {d:'d7',k:'Día 7',t:'Santa Cruz a fondo',s:'Casco histórico abierto, Las Nieves, miradores y tarde de playa.',stops:['sc','nieves','conc','hotel'],drive:'≈40 min de coche en total',it:[
-  ['10:00','Santa Cruz con todo abierto','Si el día 2 cayó en domingo, ahora toca lo que estaba cerrado: Museo Naval dentro del Barco de la Virgen, Museo Insular, tiendas de la Calle Real y el mercado municipal.','sc'],
-  ['12:30','Santuario de Las Nieves','Patrona de la isla, a pocos minutos en coche.','nieves'],
-  ['13:30','Mirador de La Concepción','Vistas sobre Santa Cruz y la costa.','conc'],
-  ['14:15','Comida en Santa Cruz','Ver «Dónde comer».',null],
-  ['16:00','Tarde de playa en Los Cancajos','Junto al alojamiento, para descansar tras el día del volcán.','hotel']]},
+ {d:'d7',k:'Día 7',t:'Santa Cruz a fondo',s:'Ruta a pie por el casco histórico con los museos abiertos, Las Nieves, mirador y tarde de playa.',stops:['sc','nieves','conc','hotel'],sub:['balc','salaz','plesp','stodom','sfran','scat','barco'],drive:'≈40 min de coche en total',it:[
+  ['9:45','Ruta a pie por Santa Cruz','Unos 2,5 km por el casco histórico, de sur a norte, casi todo llano y peatonal. Aparcad al sur de la Avenida Marítima. Entre semana están abiertos los museos, las tiendas y el mercado.','sc'],
+  ['9:50','Balcones de la Avenida Marítima','La imagen más famosa de la ciudad: casas con balcones de madera de colores frente al mar.','balc'],
+  ['10:10','Calle Real y Casa Salazar','La antigua Calle Real (calles O’Daly y Anselmo Pérez de Brito) es el eje del casco, con tiendas y casas señoriales. En el n.º 22, la Casa Salazar, casona noble del siglo XVII con patio central.','salaz'],
+  ['10:30','Plaza de España','Ayuntamiento renacentista, iglesia de El Salvador y fuente: uno de los conjuntos renacentistas más destacados de Canarias.','plesp'],
+  ['10:50','Plaza de Santo Domingo','Subiendo las escaleras desde la Plaza de España, una plaza tranquila y con sombra en la parte alta, con la iglesia de Santo Domingo.','stodom'],
+  ['11:10','Plaza de San Francisco y Museo Insular','Iglesia renacentista y antiguo convento franciscano, hoy Museo Insular (arqueología, etnografía, ciencias naturales y arte), con patio de naranjos.','sfran'],
+  ['11:50','Castillo de Santa Catalina','Fortaleza costera de planta cuadrada con cuatro baluartes, construida contra los corsarios. Visita gratuita; comprobad el horario.','scat'],
+  ['12:10','Barco de la Virgen · Museo Naval','Réplica a tamaño real de la nao Santa María, levantada en 1940. Dentro, el Museo Naval (de lunes a sábado).','barco'],
+  ['13:15','Comida en Santa Cruz','Ver «Dónde comer».',null],
+  ['15:00','Santuario de Las Nieves','Patrona de la isla, a pocos minutos en coche.','nieves'],
+  ['15:45','Mirador de La Concepción','Vistas sobre Santa Cruz y la costa.','conc'],
+  ['16:30','Tarde de playa en Los Cancajos','Junto al alojamiento, para descansar tras el día del volcán.','hotel']]},
  {d:'d8',k:'Día 8',t:'Último día',s:'Mañana tranquila por Mazo y vuelta al aeropuerto.',stops:['belm','mazo','apt'],drive:'≈45 min de coche en total',it:[
   ['10:00','Desayuno y maletas','Paseo por la playa de Los Cancajos si hay tiempo.','hotel'],
   ['12:30','Cueva de Belmaco','≈20 min. Grabados prehispánicos de los benahoaritas.','belm'],
@@ -385,6 +394,7 @@ const ic={
  food:'<path d="M7 3v8m-3-8v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>',
  wallet:'<path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1V7Zm0 0 12-3v3M16 13.5h.01"/>',
  check:'<path d="m5 12 4 4L19 6"/>',
+ pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
  flag:'<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
  chev:'<path d="m6 9 6 6 6-6"/>',
  route:'<path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12-10a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 15V9a4 4 0 0 1 4-4h6M18 9v6a4 4 0 0 1-4 4H8"/>',
@@ -434,7 +444,7 @@ function dayMap(x){
  const cx=(x0+x1)/2,cy=(y0+y1)/2,vb=[cx-w/2,cy-hh/2,w,hh].map(v=>v.toFixed(1)).join(' '),k=w/300;
  let pins='';x.stops.forEach((s,i)=>{const[px,py]=pj(P[s][0],P[s][1]);const leaf=(x.leaf||[]).includes(s);
   pins+=`<circle cx="${px}" cy="${py}" r="${11*k}" fill="${leaf?'var(--leaf)':x.c}" stroke="#fff" stroke-width="${2.2*k}"/><text x="${px}" y="${py+4.2*k}" text-anchor="middle" font-size="${12*k}" font-weight="700" fill="#fff" font-family="Outfit">${i+1}</text>`});
- return {vb,svg:island()+`<path d="${routeD(x)}" fill="none" stroke="#fff" stroke-width="${2.2*k}" stroke-dasharray="${5*k} ${5*k}" opacity=".85"/><rect x="${hp[0]-8*k}" y="${hp[1]-8*k}" width="${16*k}" height="${16*k}" rx="${4*k}" fill="#fff" stroke="var(--lava)" stroke-width="${3*k}"/>`+pins};
+ return {vb,svg:island()+'<g class="you"></g>'+`<path d="${routeD(x)}" fill="none" stroke="#fff" stroke-width="${2.2*k}" stroke-dasharray="${5*k} ${5*k}" opacity=".85"/><rect x="${hp[0]-8*k}" y="${hp[1]-8*k}" width="${16*k}" height="${16*k}" rx="${4*k}" fill="#fff" stroke="var(--lava)" stroke-width="${3*k}"/>`+pins};
 }
 const LV=[null,['Fácil','#2f8a4e'],['Media','#c98a12'],['Exigente','#d9532b']];
 let VIS={};try{VIS=JSON.parse(localStorage.getItem('lp-visited')||'{}')}catch(e){}
@@ -442,6 +452,39 @@ const saveVis=()=>{try{localStorage.setItem('lp-visited',JSON.stringify(VIS))}ca
 const PL=[];{const seen=new Set();D.forEach((x,i)=>[...x.stops,...(x.sub||[])].forEach(k=>{if(k==='hotel'||k==='apt'||seen.has(k))return;seen.add(k);PL.push([k,i])}))}
 const PLK=new Set(PL.map(p=>p[0]));
 function toggleVis(k){if(VIS[k])delete VIS[k];else VIS[k]=Date.now();saveVis();document.querySelectorAll(`.vchk[data-k="${k}"],.vrow input[data-k="${k}"]`).forEach(el=>{if(el.tagName==='INPUT')el.checked=!!VIS[k];else el.setAttribute('aria-pressed',!!VIS[k])});drawVisited()}
+/* ubicación */
+let LOC=null,locErr=null,locOn=false,vSort=false,watchId=null;
+const R_E=6371;
+function hav(a1,o1,a2,o2){const r=Math.PI/180,da=(a2-a1)*r,dl=(o2-o1)*r,x=Math.sin(da/2)**2+Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dl/2)**2;return 2*R_E*Math.asin(Math.sqrt(x))}
+const DIST=k=>LOC&&P[k]?hav(LOC.lat,LOC.lon,P[k][0],P[k][1]):Infinity;
+const fmtKm=d=>!isFinite(d)?'':d<1?Math.round(d*1000/10)*10+' m':d<10?d.toFixed(1).replace('.',',')+' km':Math.round(d).toLocaleString('es-ES')+' km';
+const onIsland=()=>LOC&&LOC.lat>28.4&&LOC.lat<28.9&&LOC.lon>-18.06&&LOC.lon<-17.68;
+function startLoc(){
+ if(!navigator.geolocation){locErr='este navegador no permite la ubicación';refreshLoc();return}
+ locOn=true;locErr=null;refreshLoc();
+ try{watchId=navigator.geolocation.watchPosition(p=>{LOC={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;refreshLoc()},
+  e=>{locErr=e.code===1?'permiso denegado':e.message||'error';locOn=false;refreshLoc()},{enableHighAccuracy:true,maximumAge:30000,timeout:20000})}catch(e){locErr=String(e);locOn=false;refreshLoc()}
+}
+function stopLoc(){if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;locOn=false;LOC=null;refreshLoc();if(typeof drawVisited==='function')drawVisited()}
+function refreshLoc(){
+ const bar=document.getElementById('locbar');
+ if(bar){
+  if(locErr)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">La ubicación no está disponible: ${esc(locErr)}</span>`;
+  else if(!locOn)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">Activa la ubicación para ver a qué distancia estás de cada sitio.</span><button type="button" class="btn sm" id="locon">Activar</button>`;
+  else if(!LOC)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">Buscando tu ubicación…</span>`;
+  else{const near=[...PL].sort((a,b)=>DIST(a[0])-DIST(b[0]))[0];
+   bar.innerHTML=`<span class="li on">${I('pin')}</span><span class="lt">${onIsland()?`Estás en La Palma · lo más cercano: <b>${esc(P[near[0]][2])}</b> a ${fmtKm(DIST(near[0]))}`:`Estás a <b>${fmtKm(DIST('hotel'))}</b> de La Palma`} <small>· precisión ${Math.round(LOC.acc)} m</small></span><button type="button" class="btn sm ghost" id="locoff">Apagar</button>`}
+ }
+ document.querySelectorAll('.dist').forEach(el=>{const d=DIST(el.dataset.k);el.textContent=isFinite(d)?fmtKm(d):''});
+ document.querySelectorAll('svg g.you').forEach(g=>{
+  if(!onIsland()){g.innerHTML='';return}
+  const svg=g.ownerSVGElement,vb=svg.viewBox.baseVal,s=(vb&&vb.width?vb.width:300)/300,[x,y]=pj(LOC.lat,LOC.lon);
+  g.innerHTML=`<circle cx="${x}" cy="${y}" r="${16*s}" fill="#2f7cf6" opacity=".18"/><circle cx="${x}" cy="${y}" r="${7*s}" fill="#2f7cf6" stroke="#fff" stroke-width="${2.5*s}"/>`});
+ const vs=document.getElementById('vsort');if(vs){vs.hidden=!LOC;vs.textContent=vSort?'Ordenar por día':'Ordenar por cercanía'}
+}
+document.addEventListener('click',e=>{if(e.target.closest('#locon'))startLoc();if(e.target.closest('#locoff'))stopLoc();if(e.target.closest('#vsort')){vSort=!vSort;drawVisited()}});
+try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(s=>{if(s.state==='granted')startLoc()}).catch(()=>{})}catch(e){}
+
 const shownF=new Set();
 function fichaHtml(k){const f=k&&F[k];if(!f||shownF.has(k))return '';shownF.add(k);
  const rows=[['Qué es',f[0]],['Desde el coche',f[1]],['Ruta a pie',f[2]],['Desnivel',f[3]],['Tiempo',f[4]],['Ojo',f[6]]].filter(x=>x[1]);
@@ -456,15 +499,15 @@ function showDay(i,push=true){
  const items=x.it.map(r=>{const k=r[3],key=!!r[4];const n=k&&order[k]?order[k]:(k&&(x.sub||[]).includes(k)?'·':'');const leaf=k&&(x.leaf||[]).includes(k);
   const more=(r[2]?`<p>${r[2]}</p>`:'')+fichaHtml(k)+(k?`<a class="lnk" href="${mq(P[k][2]+', La Palma')}" target="_blank" rel="noopener">${I('map')} Abrir en Maps</a>`:'');
   const chk=k&&PLK.has(k)&&!/^Comida/.test(r[1])&&!chkSeen.has(k)&&(chkSeen.add(k),true);
-  return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
+  return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${k&&k!=='hotel'&&k!=='apt'?`<span class="dist" data-k="${k}"></span>`:''}${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
  const eat=(EAT[x.d]||[]);const dm=dayMap(x);
  dayEl.style.setProperty('--c',x.c);
  dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8</div><h3>${x.t}</h3><p>${x.s}</p><div class="wx" id="wx"></div><div class="chips"><span class="chip">${x.drive}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
   <div class="cta"><a class="btn" href="${routeLink(x)}" target="_blank" rel="noopener">${I('route')} Ruta en Google Maps</a>${x.sub?`<a class="btn ghost" href="${'https://www.google.com/maps/dir/?api=1&travelmode=walking&origin='+P[x.sub[0]][0]+','+P[x.sub[0]][1]+'&destination='+P[x.sub[x.sub.length-1]][0]+','+P[x.sub[x.sub.length-1]][1]+'&waypoints='+encodeURIComponent(x.sub.slice(1,-1).map(k=>P[k][0]+','+P[k][1]).join('|'))}" target="_blank" rel="noopener">${I('route')} Ruta a pie por Santa Cruz</a>`:''}<button class="btn ghost" type="button" id="expand">Desplegar todo</button></div>
   <div class="dbody"><ol class="tl">${items}</ol>${x.note?`<div class="note"><b>!</b><span>${x.note}</span></div>`:''}${roadsHtml(x)}</div></article>
-  <aside class="side"><div class="panel"><h4>La ruta</h4><div class="minimap"><svg viewBox="${dm.vb}" role="img" aria-label="Mapa de la ruta del día">${dm.svg}</svg></div><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])}</li>`).join('')}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
+  <aside class="side"><div class="panel"><h4>La ruta</h4><div class="minimap"><svg viewBox="${dm.vb}" role="img" aria-label="Mapa de la ruta del día">${dm.svg}</svg></div><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></li>`).join('')}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
   ${eat.length?`<div class="panel"><h4>Dónde comer</h4><div class="food">${eat.map(foodItem).join('')}</div></div>`:''}</aside>`;
- renderWx(i);
+ renderWx(i);refreshLoc();
  if(push&&location.hash!=='#dia-'+(i+1))history.replaceState(null,'','#dia-'+(i+1));
  try{localStorage.setItem('lp-day',i)}catch(e){}
 }
@@ -478,10 +521,10 @@ dayEl.addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouc
 /* big map */
 const on=D.map(()=>true);const big=document.getElementById('bigmap'),leg=document.getElementById('legend');
 function drawBig(){let r='',p='';D.forEach((x,i)=>{if(!on[i])return;r+=`<path d="${routeD(x)}" fill="none" stroke="${x.c}" stroke-width="2.4" opacity=".9" stroke-linejoin="round"/>`;x.stops.forEach(k=>{if(k==='hotel')return;const[px,py]=pj(P[k][0],P[k][1]);p+=`<circle cx="${px}" cy="${py}" r="5" fill="${x.c}" stroke="#fff" stroke-width="1.5"><title>${esc(P[k][2])} · ${x.k}</title></circle>`})});
- big.innerHTML=island()+r+hotelMark+p+`<text x="${hp[0]+12}" y="${hp[1]+4}" font-size="11" font-weight="700" fill="var(--ink)" stroke="light-dark(#d9ecef,#0a3340)" stroke-width="3" paint-order="stroke" font-family="Inter">Hotel</text>`}
+ big.innerHTML=island()+r+hotelMark+p+'<g class="you"></g>'+`<text x="${hp[0]+12}" y="${hp[1]+4}" font-size="11" font-weight="700" fill="var(--ink)" stroke="light-dark(#d9ecef,#0a3340)" stroke-width="3" paint-order="stroke" font-family="Inter">Hotel</text>`}
 leg.innerHTML=D.map((x,i)=>`<button class="lg" type="button" style="--c:${x.c}" data-i="${i}" aria-pressed="true"><i></i><span><b>${x.k}</b> · ${x.t}<br><small>${x.stops.filter(k=>k!=='hotel').map(k=>esc(P[k][2])).join(', ')}</small></span></button>`).join('');
 leg.addEventListener('click',e=>{const b=e.target.closest('.lg');if(!b)return;const i=+b.dataset.i;on[i]=!on[i];b.setAttribute('aria-pressed',on[i]);drawBig()});
-drawBig();
+drawBig();refreshLoc();
 
 /* food view */
 const ff=document.getElementById('ffilters'),fa=document.getElementById('foodall');let fsel=-1;
@@ -508,15 +551,17 @@ function upd(){const n=C.filter((_,i)=>done[i]).length,f=n/C.length,R2=62,L=2*Ma
 upd();
 ch.addEventListener('change',e=>{done[e.target.dataset.i]=e.target.checked;try{localStorage.setItem('lp-checks',JSON.stringify(done))}catch(err){}upd()});
 
+
 /* visitados */
 const fmtD=new Intl.DateTimeFormat('es-ES',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 function drawVisited(){
  const n=PL.filter(p=>VIS[p[0]]).length,t=PL.length;
  document.getElementById('vprog').innerHTML=`<div class="vp"><b>${n}</b><span>de ${t} sitios</span></div><div class="bar"><i style="width:${(n/t*100).toFixed(1)}%"></i></div>`;
  let pins='';PL.forEach(([k,i])=>{const[px,py]=pj(P[k][0],P[k][1]);pins+=`<circle cx="${px}" cy="${py}" r="${VIS[k]?6:4.5}" fill="${VIS[k]?'var(--leaf)':'#8a979a'}" stroke="#fff" stroke-width="1.5"><title>${esc(P[k][2])}</title></circle>`});
- document.getElementById('vmap').innerHTML=island()+hotelMark+pins;
- document.getElementById('vlist').innerHTML=D.map((x,i)=>{const ps=PL.filter(p=>p[1]===i);if(!ps.length)return'';const dn=ps.filter(p=>VIS[p[0]]).length;
-  return `<div class="vgroup" style="--c:${x.c}"><h3><i></i>${x.k} · ${x.t}<small>${dn}/${ps.length}</small></h3><ul>${ps.map(([k])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])}</b>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`}).join('');
+ document.getElementById('vmap').innerHTML=island()+hotelMark+pins+'<g class="you"></g>';
+ document.getElementById('vlist').innerHTML=(LOC&&vSort?`<div class="vgroup"><h3>Ordenados por cercanía</h3><ul>${[...PL].sort((a,b)=>DIST(a[0])-DIST(b[0])).map(([k,i])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></b><small class="dd">${D[i].k} · ${esc(D[i].t)}</small>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`:'')+(LOC&&vSort?'':D.map((x,i)=>{const ps=PL.filter(p=>p[1]===i);if(!ps.length)return'';const dn=ps.filter(p=>VIS[p[0]]).length;
+  return `<div class="vgroup" style="--c:${x.c}"><h3><i></i>${x.k} · ${x.t}<small>${dn}/${ps.length}</small></h3><ul>${ps.map(([k])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></b>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`}).join(''));
+ refreshLoc();
 }
 document.getElementById('vlist').addEventListener('change',e=>{const k=e.target.dataset.k;if(k)toggleVis(k)});
 drawVisited();
