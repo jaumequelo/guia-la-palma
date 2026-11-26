@@ -150,6 +150,7 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .wxi{flex:none;width:40px;height:40px}.wxi svg{width:40px;height:40px}
 .wxm{display:flex;flex-direction:column;flex:1 1 180px}.wxm b{font:700 24px Outfit,sans-serif;line-height:1.1}.wxm b small{font-size:16px;opacity:.8}.wxm>small{font-size:13px;opacity:.88}
 .wxs{display:flex;gap:14px;font-size:13px;opacity:.95}.wxs b{display:block;font-size:15px}
+.wxhint{opacity:1!important;font-weight:600}
 .wxl{font-size:14px;opacity:.92}.wxl a{color:#fff;font-weight:700}
 .wxset label{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
 .wxset input{min-height:40px;border-radius:10px;border:0;padding:0 10px;font:16px Inter,sans-serif}
@@ -532,7 +533,7 @@ const qs=new URLSearchParams(location.search).get('llegada');
 if(qs&&/^\d{4}-\d{2}-\d{2}$/.test(qs)){try{localStorage.setItem('lp-start',qs)}catch(e){}}
 let START=null;try{START=localStorage.getItem('lp-start')}catch(e){}
 if(!START&&qs)START=qs;
-const getStart=()=>START;
+const getStart=()=>START||todayISO();
 function setStart(v){START=v||null;try{v?localStorage.setItem('lp-start',v):localStorage.removeItem('lp-start')}catch(e){}loadWx()}
 let WX=null,wxErr=null,wxBusy=false;
 async function loadWx(){
@@ -562,7 +563,7 @@ function renderWx(i){
  if(wxErr){el.innerHTML=`<span class="wxl">No se ha podido cargar la previsión. Revisa la conexión.</span>`;return}
  const w=WX.data[k+'|'+date];if(!w){el.innerHTML=`<span class="wxl">Sin datos para ${fd}</span>`;return}
  const [ic,tx]=WMO(w.c);
- el.innerHTML=`<span class="wxi">${wxIcon(ic)}</span><span class="wxm"><b>${Math.round(w.mx)}° <small>/ ${Math.round(w.mn)}°</small></b><small>${tx} · ${esc(place)} · ${fd}</small></span><span class="wxs"><span>Lluvia <b>${w.p??'–'} %</b></span><span>Viento <b>${Math.round(w.w)} km/h</b></span></span>`;
+ el.innerHTML=`<span class="wxi">${wxIcon(ic)}</span><span class="wxm"><b>${Math.round(w.mx)}° <small>/ ${Math.round(w.mn)}°</small></b><small>${tx} · ${esc(place)} · ${fd}</small>${START?'':'<small class="wxhint">Día 1 = hoy. Pon tu fecha de llegada en «Info».</small>'}</span><span class="wxs"><span>Lluvia <b>${w.p??'–'} %</b></span><span>Viento <b>${Math.round(w.w)} km/h</b></span></span>`;
 }
 
 
