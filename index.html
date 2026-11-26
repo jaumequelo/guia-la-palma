@@ -182,6 +182,18 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .lhot{display:block;width:18px;height:18px;border-radius:5px;background:#fff;border:3px solid var(--lava);box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .leaflet-popup-content{font:14px/1.4 Inter,sans-serif}.leaflet-popup-content a{color:#0c6e7d;font-weight:600}.lpd{color:#2f7cf6;font-weight:600}
 .leaflet-container{font-family:Inter,sans-serif}
+.dist{appearance:none;border:0;background:color-mix(in oklab,#2f7cf6 12%,transparent);color:#2f7cf6;border-radius:999px;padding:3px 8px;min-height:26px;cursor:pointer;font:600 12px Inter,sans-serif;white-space:nowrap;flex:none}
+.dist:empty{display:none}.dist:hover{background:color-mix(in oklab,#2f7cf6 22%,transparent)}
+.rmodal{position:fixed;inset:0;z-index:50;background:rgba(4,20,24,.55);display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+.rmodal[hidden]{display:none}
+@media(min-width:700px){.rmodal{align-items:center}}
+.rbox{width:min(640px,100%);max-height:100%;overflow:auto;background:var(--surf);border-radius:22px;padding:16px;display:grid;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:fade .2s ease-out}
+.rhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.rhead small{color:var(--mute)}.rhead h3{font-size:22px;margin-top:2px}
+.rclose{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--surf2);font-size:26px;line-height:1;cursor:pointer;color:var(--ink)}
+.rmodes{display:flex;gap:6px}.rmodes button{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surf);font-weight:600;cursor:pointer}
+.rmodes button[aria-pressed=true]{background:#2f7cf6;border-color:#2f7cf6;color:#fff}
+.rstat{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--mute)}.rstat b{color:var(--ink);font-size:16px}
+#rmap{height:min(360px,48vh)}
 .note{margin:12px 0 0;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,var(--lava) 12%,var(--surf));font-size:15px;display:flex;gap:10px}
 .note b{color:var(--lava)}
 
@@ -270,6 +282,13 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
   </div>
 </header>
 
+<div class="rmodal" id="rmodal" hidden><div class="rbox" role="dialog" aria-modal="true" aria-labelledby="rtitle">
+  <div class="rhead"><div><small>Cómo llegar desde tu ubicación</small><h3 id="rtitle"></h3></div><button type="button" class="rclose" id="rclose" aria-label="Cerrar">×</button></div>
+  <div class="rmodes"><button type="button" data-m="car" aria-pressed="true">En coche</button><button type="button" data-m="foot" aria-pressed="false">A pie</button></div>
+  <div class="rstat" id="rstat"></div>
+  <div class="lmap" id="rmap"></div>
+  <a class="btn" id="rgmaps" target="_blank" rel="noopener">Abrir en Google Maps</a>
+ </div></div>
 <div class="tabs"><nav aria-label="Secciones" id="tabs"></nav></div>
 
 <main class="wrap">
@@ -489,7 +508,8 @@ async function roadLine(pts){
   const r=await fetch(url);if(!r.ok)throw 0;const j=await r.json();const c=j.routes&&j.routes[0]&&j.routes[0].geometry.coordinates;if(!c)throw 0;
   return RCACHE[key]=c.map(q=>[q[1],q[0]])}catch(e){return null}
 }
-let dayReq=0;
+let dayReq=0,bigReq=0;
+const drivePts=x=>{const H=[P.hotel[0],P.hotel[1]];const dp=[H,...x.stops.filter(k=>k!=='hotel'&&!(x.walk||[]).includes(k)).map(k=>[P[k][0],P[k][1]])];if(x.d!=='d8')dp.push(H);return dp};
 function initDayMap(x){
  const o=lbase('daymap');if(!o)return;o.layer.clearLayers();const req=++dayReq;
  const H=[P.hotel[0],P.hotel[1]];
@@ -501,14 +521,15 @@ function initDayMap(x){
  const straight=L.polyline(pts,{color:x.c,weight:3,dashArray:'6 6',opacity:.8}).addTo(o.layer);
  const all=[...pts,...(x.sub||[]).map(k=>[P[k][0],P[k][1]])];
  o.pts=all;setTimeout(()=>fitL(o),80);
- const dp=[H,...drive.map(k=>[P[k][0],P[k][1]])];if(x.d!=='d8')dp.push(H);
+ const dp=drivePts(x);
  if(dp.length>1)roadLine(dp).then(line=>{if(!line||req!==dayReq)return;o.layer.removeLayer(straight);L.polyline(line,{color:x.c,weight:4,opacity:.85}).addTo(o.layer)});
 }
 function drawBigL(){
- const o=lbase('bigmap');if(!o)return;o.layer.clearLayers();
+ const o=lbase('bigmap');if(!o)return;o.layer.clearLayers();const req=++bigReq;
  L.marker([P.hotel[0],P.hotel[1]],{icon:hotelIcon()}).bindPopup('<b>Alojamiento (Los Cancajos)</b>').addTo(o.layer);
  const b=[];D.forEach((x,i)=>{if(!on[i])return;const pts=[[P.hotel[0],P.hotel[1]],...x.stops.filter(k=>k!=='hotel').map(k=>[P[k][0],P[k][1]])];
-  L.polyline(pts,{color:x.c,weight:3,opacity:.85}).addTo(o.layer);
+  const sl=L.polyline(pts,{color:x.c,weight:2,opacity:.5,dashArray:'5 6'}).addTo(o.layer);
+  roadLine(drivePts(x)).then(line=>{if(!line||req!==bigReq)return;o.layer.removeLayer(sl);L.polyline(line,{color:x.c,weight:3.5,opacity:.9}).bindTooltip(`${x.k} · ${esc(x.t)}`,{sticky:true}).addTo(o.layer)});
   x.stops.forEach(k=>{if(k==='hotel')return;b.push([P[k][0],P[k][1]]);L.marker([P[k][0],P[k][1]],{icon:numIcon('',x.c,16)}).bindPopup(popup(k)+`<br><small>${x.k} · ${esc(x.t)}</small>`).addTo(o.layer)})});
  o.pts=[[P.hotel[0],P.hotel[1]],...b];setTimeout(()=>fitL(o),80);
 }
@@ -520,6 +541,36 @@ function drawVisL(){
 function youL(){if(LOC&&fitPending){fitPending=false;setTimeout(()=>Object.values(LM).forEach(m=>{if(m&&m.el.offsetParent)fitL(m)}),50)}Object.values(LM).forEach(o=>{if(!o)return;o.you.clearLayers();if(!LOC)return;
  L.circle([LOC.lat,LOC.lon],{radius:Math.min(LOC.acc,500),color:'#2f7cf6',weight:1,fillOpacity:.12}).addTo(o.you);
  L.circleMarker([LOC.lat,LOC.lon],{radius:7,color:'#fff',weight:2.5,fillColor:'#2f7cf6',fillOpacity:1}).bindPopup('Estás aquí').addTo(o.you)})}
+
+
+/* ruta hasta un sitio */
+let RK=null,RM='car',rReq=0;
+async function routeTo(mode,a,b){
+ const urls=mode==='foot'?['https://routing.openstreetmap.de/routed-foot/route/v1/driving/']:['https://router.project-osrm.org/route/v1/driving/','https://routing.openstreetmap.de/routed-car/route/v1/driving/'];
+ for(const u of urls){try{const r=await fetch(u+a[1]+','+a[0]+';'+b[1]+','+b[0]+'?overview=full&geometries=geojson');if(!r.ok)continue;const j=await r.json();const rt=j.routes&&j.routes[0];if(rt)return{line:rt.geometry.coordinates.map(q=>[q[1],q[0]]),km:rt.distance/1000,min:rt.duration/60}}catch(e){}}
+ return null}
+const fmtMin=m=>m<60?Math.round(m)+' min':Math.floor(m/60)+' h '+String(Math.round(m%60)).padStart(2,'0')+' min';
+async function drawRoute(){
+ if(!RK||!LOC)return;const req=++rReq;const a=[LOC.lat,LOC.lon],b=[P[RK][0],P[RK][1]];
+ document.querySelectorAll('.rmodes button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===RM));
+ document.getElementById('rgmaps').href=`https://www.google.com/maps/dir/?api=1&origin=${a[0]},${a[1]}&destination=${b[0]},${b[1]}&travelmode=${RM==='foot'?'walking':'driving'}`;
+ const st=document.getElementById('rstat');st.innerHTML=`<span>En línea recta <b>${fmtKm(DIST(RK))}</b></span><span>Calculando ruta…</span>`;
+ const o=lbase('rmap');if(!o)return;o.layer.clearLayers();
+ L.marker(b,{icon:numIcon('',RK==='hotel'?'#ff5a3c':'#0c6e7d',22)}).bindPopup(popup(RK)).addTo(o.layer);
+ const sl=L.polyline([a,b],{color:'#2f7cf6',weight:2,dashArray:'5 6',opacity:.6}).addTo(o.layer);
+ o.pts=[a,b];youL();setTimeout(()=>fitL(o),60);
+ const r=await routeTo(RM,a,b);if(req!==rReq)return;
+ if(r){o.layer.removeLayer(sl);L.polyline(r.line,{color:'#2f7cf6',weight:5,opacity:.9}).addTo(o.layer);o.pts=[a,b,...r.line];fitL(o);
+  st.innerHTML=`<span>${RM==='foot'?'A pie':'En coche'} <b>${fmtKm(r.km)}</b></span><span>≈ <b>${fmtMin(r.min)}</b></span><span>En línea recta ${fmtKm(DIST(RK))}</span>`}
+ else st.innerHTML=`<span>En línea recta <b>${fmtKm(DIST(RK))}</b></span><span>${onIsland()?'No se ha podido calcular la ruta ahora.':'Desde fuera de la isla no hay ruta por carretera.'}</span>`;
+}
+function openRoute(k){if(!LOC||!P[k])return;RK=k;RM=DIST(k)<1.5?'foot':'car';document.getElementById('rtitle').textContent=P[k][2];
+ const m=document.getElementById('rmodal');m.hidden=false;document.body.style.overflow='hidden';setTimeout(drawRoute,30);document.getElementById('rclose').focus()}
+function closeRoute(){document.getElementById('rmodal').hidden=true;document.body.style.overflow='';RK=null}
+document.addEventListener('click',e=>{const d=e.target.closest('.dist');if(d){e.preventDefault();e.stopPropagation();openRoute(d.dataset.k);return}
+ if(e.target.id==='rclose'||e.target.id==='rmodal'){closeRoute();return}
+ const mb=e.target.closest('.rmodes button');if(mb){RM=mb.dataset.m;drawRoute()}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('rmodal').hidden)closeRoute()});
 
 /* ubicación */
 let LOC=null,locErr=null,locOn=false,vSort=false,watchId=null;
@@ -570,13 +621,13 @@ function showDay(i,push=true){
  const items=x.it.map(r=>{const k=r[3],key=!!r[4];const n=k&&order[k]?order[k]:(k&&(x.sub||[]).includes(k)?'·':'');const leaf=k&&(x.leaf||[]).includes(k);
   const more=(r[2]?`<p>${r[2]}</p>`:'')+fichaHtml(k)+(k?`<a class="lnk" href="${mq(P[k][2]+', La Palma')}" target="_blank" rel="noopener">${I('map')} Abrir en Maps</a>`:'');
   const chk=k&&PLK.has(k)&&!/^Comida/.test(r[1])&&!chkSeen.has(k)&&(chkSeen.add(k),true);
-  return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${k&&k!=='hotel'&&k!=='apt'?`<span class="dist" data-k="${k}"></span>`:''}${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
+  return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${k&&k!=='hotel'&&k!=='apt'?`<button type="button" class="dist" data-k="${k}"></button>`:''}${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
  const eat=(EAT[x.d]||[]);const dm=dayMap(x);
  dayEl.style.setProperty('--c',x.c);
  dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8</div><h3>${x.t}</h3><p>${x.s}</p><div class="wx" id="wx"></div><div class="chips"><span class="chip">${x.drive}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
   <div class="cta"><a class="btn" href="${routeLink(x)}" target="_blank" rel="noopener">${I('route')} Ruta en Google Maps</a>${x.sub?`<a class="btn ghost" href="${'https://www.google.com/maps/dir/?api=1&travelmode=walking&origin='+P[x.sub[0]][0]+','+P[x.sub[0]][1]+'&destination='+P[x.sub[x.sub.length-1]][0]+','+P[x.sub[x.sub.length-1]][1]+'&waypoints='+encodeURIComponent(x.sub.slice(1,-1).map(k=>P[k][0]+','+P[k][1]).join('|'))}" target="_blank" rel="noopener">${I('route')} Ruta a pie por Santa Cruz</a>`:''}<button class="btn ghost" type="button" id="expand">Desplegar todo</button></div>
   <div class="dbody"><ol class="tl">${items}</ol>${x.note?`<div class="note"><b>!</b><span>${x.note}</span></div>`:''}${roadsHtml(x)}</div></article>
-  <aside class="side"><div class="panel"><h4>La ruta</h4><div class="lmap" id="daymap" role="region" aria-label="Mapa interactivo de la ruta del día"></div><p class="fine lnote">Mapa de OpenStreetMap: arrastra y haz zoom. La línea sigue las carreteras cuando el servicio de rutas responde.</p><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></li>`).join('')}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
+  <aside class="side"><div class="panel"><h4>La ruta</h4><div class="lmap" id="daymap" role="region" aria-label="Mapa interactivo de la ruta del día"></div><p class="fine lnote">Mapa de OpenStreetMap: arrastra y haz zoom. La línea sigue las carreteras cuando el servicio de rutas responde.</p><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])} <button type="button" class="dist" data-k="${k}"></button></li>`).join('')}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
   ${eat.length?`<div class="panel"><h4>Dónde comer</h4><div class="food">${eat.map(foodItem).join('')}</div></div>`:''}</aside>`;
  renderWx(i);initDayMap(x);refreshLoc();
  if(push&&location.hash!=='#dia-'+(i+1))history.replaceState(null,'','#dia-'+(i+1));
@@ -629,8 +680,8 @@ function drawVisited(){
  document.getElementById('vprog').innerHTML=`<div class="vp"><b>${n}</b><span>de ${t} sitios</span></div><div class="bar"><i style="width:${(n/t*100).toFixed(1)}%"></i></div>`;
  let pins='';PL.forEach(([k,i])=>{const[px,py]=pj(P[k][0],P[k][1]);pins+=`<circle cx="${px}" cy="${py}" r="${VIS[k]?6:4.5}" fill="${VIS[k]?'var(--leaf)':'#8a979a'}" stroke="#fff" stroke-width="1.5"><title>${esc(P[k][2])}</title></circle>`});
  drawVisL();
- document.getElementById('vlist').innerHTML=(LOC&&vSort?`<div class="vgroup"><h3>Ordenados por cercanía</h3><ul>${[...PL].sort((a,b)=>DIST(a[0])-DIST(b[0])).map(([k,i])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></b><small class="dd">${D[i].k} · ${esc(D[i].t)}</small>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`:'')+(LOC&&vSort?'':D.map((x,i)=>{const ps=PL.filter(p=>p[1]===i);if(!ps.length)return'';const dn=ps.filter(p=>VIS[p[0]]).length;
-  return `<div class="vgroup" style="--c:${x.c}"><h3><i></i>${x.k} · ${x.t}<small>${dn}/${ps.length}</small></h3><ul>${ps.map(([k])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <span class="dist" data-k="${k}"></span></b>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`}).join(''));
+ document.getElementById('vlist').innerHTML=(LOC&&vSort?`<div class="vgroup"><h3>Ordenados por cercanía</h3><ul>${[...PL].sort((a,b)=>DIST(a[0])-DIST(b[0])).map(([k,i])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <button type="button" class="dist" data-k="${k}"></button></b><small class="dd">${D[i].k} · ${esc(D[i].t)}</small>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`:'')+(LOC&&vSort?'':D.map((x,i)=>{const ps=PL.filter(p=>p[1]===i);if(!ps.length)return'';const dn=ps.filter(p=>VIS[p[0]]).length;
+  return `<div class="vgroup" style="--c:${x.c}"><h3><i></i>${x.k} · ${x.t}<small>${dn}/${ps.length}</small></h3><ul>${ps.map(([k])=>`<li class="vrow"><label><input type="checkbox" data-k="${k}" ${VIS[k]?'checked':''}><span><b>${esc(P[k][2])} <button type="button" class="dist" data-k="${k}"></button></b>${VIS[k]?`<small>Visitado ${fmtD.format(new Date(VIS[k]))}</small>`:''}</span></label></li>`).join('')}</ul></div>`}).join(''));
  refreshLoc();
 }
 document.getElementById('vlist').addEventListener('change',e=>{const k=e.target.dataset.k;if(k)toggleVis(k)});
