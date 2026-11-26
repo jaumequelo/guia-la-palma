@@ -463,6 +463,10 @@ const ic={
 };
 const I=(n,cls='')=>`<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic[n]}</svg>`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* cerca de mí */
+const NEAR=[["Gasolineras", "gasolinera"], ["Farmacias", "farmacia"], ["Supermercados", "supermercado"], ["Cajeros", "cajero automático"], ["Aparcamientos", "aparcamiento"], ["Urgencias y centros de salud", "centro de salud urgencias"], ["Cafeterías", "cafetería"], ["Miradores", "mirador"]];
+const nearUrl=q=>LOC?`https://www.google.com/maps/search/${encodeURIComponent(q)}/@${LOC.lat},${LOC.lon},14z`:`https://www.google.com/maps/search/${encodeURIComponent(q+' cerca de mí')}`;
+function drawNear(){const el=document.getElementById('near');if(!el)return;el.innerHTML=`<h4>Cerca de mí</h4><p class="fine" style="margin:0 0 10px">Abre Google Maps buscando alrededor de donde estéis${LOC?'':' (Maps usará la ubicación del móvil)'}.</p><div class="nearg">${NEAR.map(n=>`<a class="nbtn" href="${nearUrl(n[1])}" target="_blank" rel="noopener">${I('pin')}${n[0]}</a>`).join('')}</div><p class="fine">Emergencias: <b>112</b></p>`}
 const mq=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
 const lat0=28.875,lon0=-18.025,kx=300/0.33,ky=420/0.45;
 const pj=(la,lo)=>[(lo-lon0)*kx,(lat0-la)*ky];
@@ -605,22 +609,31 @@ function hav(a1,o1,a2,o2){const r=Math.PI/180,da=(a2-a1)*r,dl=(o2-o1)*r,x=Math.s
 const DIST=k=>LOC&&P[k]?hav(LOC.lat,LOC.lon,P[k][0],P[k][1]):Infinity;
 const fmtKm=d=>!isFinite(d)?'':d<1?Math.round(d*1000/10)*10+' m':d<10?d.toFixed(1).replace('.',',')+' km':Math.round(d).toLocaleString('es-ES')+' km';
 const onIsland=()=>LOC&&LOC.lat>28.4&&LOC.lat<28.9&&LOC.lon>-18.06&&LOC.lon<-17.68;
+let locWd=null,locSlow=false;
+const gotPos=p=>{LOC={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;locSlow=false;clearTimeout(locWd);try{sessionStorage.setItem('lp-lastpos',JSON.stringify(LOC))}catch(e){}refreshLoc()};
+const posErr=e=>{if(e&&e.code===1){locErr='has denegado el permiso. Actívalo en los ajustes del navegador para esta web.';locOn=false;clearTimeout(locWd);if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+ else if(!LOC){locSlow=true}refreshLoc()};
 function startLoc(){try{localStorage.setItem('lp-loc','1')}catch(e){}
  if(!navigator.geolocation){locErr='este navegador no permite la ubicación';refreshLoc();return}
- locOn=true;locErr=null;refreshLoc();
- try{watchId=navigator.geolocation.watchPosition(p=>{LOC={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;refreshLoc()},
-  e=>{locErr=e.code===1?'permiso denegado':e.message||'error';locOn=false;refreshLoc()},{enableHighAccuracy:true,maximumAge:30000,timeout:20000})}catch(e){locErr=String(e);locOn=false;refreshLoc()}
+ if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+ locOn=true;locErr=null;locSlow=false;
+ if(!LOC){try{const s=JSON.parse(sessionStorage.getItem('lp-lastpos')||'null');if(s&&Date.now()-s.t<30*60000)LOC=s}catch(e){}}
+ refreshLoc();
+ // 1) posición rápida (red/wifi, vale una reciente)  2) seguimiento preciso
+ try{navigator.geolocation.getCurrentPosition(gotPos,posErr,{enableHighAccuracy:false,maximumAge:300000,timeout:10000})}catch(e){}
+ try{watchId=navigator.geolocation.watchPosition(gotPos,posErr,{enableHighAccuracy:true,maximumAge:15000,timeout:30000})}catch(e){locErr=String(e);locOn=false}
+ clearTimeout(locWd);locWd=setTimeout(()=>{if(!LOC&&locOn){locSlow=true;refreshLoc()}},12000);
 }
-function refreshNow(btn){fitPending=true;if(!navigator.geolocation)return;btn.classList.add('spin');navigator.geolocation.getCurrentPosition(p=>{LOC={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;refreshLoc()},e=>{locErr=e.code===1?'permiso denegado':e.message||'error';refreshLoc()},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
-function stopLoc(){try{localStorage.setItem('lp-loc','0')}catch(e){}fitPending=true;if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;locOn=false;LOC=null;refreshLoc();if(typeof drawVisited==='function')drawVisited()}
+function refreshNow(btn){fitPending=true;if(!navigator.geolocation)return;btn&&btn.classList.add('spin');navigator.geolocation.getCurrentPosition(p=>{btn&&btn.classList.remove('spin');gotPos(p)},e=>{btn&&btn.classList.remove('spin');posErr(e)},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+function stopLoc(){clearTimeout(locWd);locSlow=false;try{localStorage.setItem('lp-loc','0')}catch(e){}fitPending=true;if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;locOn=false;LOC=null;refreshLoc();if(typeof drawVisited==='function')drawVisited()}
 function refreshLoc(){
  const bar=document.getElementById('locbar');
  if(bar){
-  if(locErr)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">La ubicación no está disponible: ${esc(locErr)}</span>`;
+  if(locErr)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">La ubicación no está disponible: ${esc(locErr)}</span><span class="lbtns"><button type="button" class="btn sm" id="locon">Reintentar</button></span>`;
   else if(!locOn)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">Activa la ubicación para ver a qué distancia estás de cada sitio.</span><button type="button" class="btn sm" id="locon">Activar</button>`;
-  else if(!LOC)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">Buscando tu ubicación…</span>`;
+  else if(!LOC)bar.innerHTML=`<span class="li">${I('pin')}</span><span class="lt">${locSlow?'Cuesta encontrar la ubicación. Comprueba que el GPS del móvil está activado; al aire libre va más rápido.':'Buscando tu ubicación…'}</span><span class="lbtns">${locSlow?'<button type="button" class="btn sm" id="locretry">Reintentar</button>':''}<button type="button" class="btn sm ghost" id="locoff">Cancelar</button></span>`;
   else{const near=[...PL].sort((a,b)=>DIST(a[0])-DIST(b[0]))[0];
-   bar.innerHTML=`<span class="li on">${I('pin')}</span><span class="lt">${onIsland()?`Estás en La Palma · lo más cercano: <b>${esc(P[near[0]][2])}</b> a ${fmtKm(DIST(near[0]))}`:`Estás a <b>${fmtKm(DIST('hotel'))}</b> de La Palma`} <small>· precisión ${Math.round(LOC.acc)} m</small></span><span class="lbtns"><button type="button" class="btn sm ghost icon" id="locref" aria-label="Actualizar ubicación" title="Actualizar ubicación">${I('refresh')}</button><button type="button" class="btn sm ghost" id="locoff">Apagar</button></span>`}
+   bar.innerHTML=`<span class="li on">${I('pin')}</span><span class="lt">${onIsland()?`Estás en La Palma · lo más cercano: <b>${esc(P[near[0]][2])}</b> a ${fmtKm(DIST(near[0]))}`:`Estás a <b>${fmtKm(DIST('hotel'))}</b> de La Palma`} <small>· precisión ${LOC.acc>1000?fmtKm(LOC.acc/1000)+' (aproximada)':Math.round(LOC.acc)+' m'}</small></span><span class="lbtns"><button type="button" class="btn sm ghost icon" id="locref" aria-label="Actualizar ubicación" title="Actualizar ubicación">${I('refresh')}</button><button type="button" class="btn sm ghost" id="locoff">Apagar</button></span>`}
  }
  document.querySelectorAll('.dist').forEach(el=>{const d=DIST(el.dataset.k);el.textContent=isFinite(d)?fmtKm(d):''});
  drawNear();youL();
@@ -630,7 +643,7 @@ function refreshLoc(){
   g.innerHTML=`<circle cx="${x}" cy="${y}" r="${16*s}" fill="#2f7cf6" opacity=".18"/><circle cx="${x}" cy="${y}" r="${7*s}" fill="#2f7cf6" stroke="#fff" stroke-width="${2.5*s}"/>`});
  const vs=document.getElementById('vsort');if(vs){vs.hidden=!LOC;vs.textContent=vSort?'Ordenar por día':'Ordenar por cercanía'}
 }
-document.addEventListener('click',e=>{if(e.target.closest('#locon'))startLoc();if(e.target.closest('#locoff'))stopLoc();if(e.target.closest('#locref'))refreshNow(e.target.closest('#locref'));if(e.target.closest('#vsort')){vSort=!vSort;drawVisited()}});
+document.addEventListener('click',e=>{if(e.target.closest('#locon'))startLoc();if(e.target.closest('#locretry'))startLoc();if(e.target.closest('#locoff'))stopLoc();if(e.target.closest('#locref'))refreshNow(e.target.closest('#locref'));if(e.target.closest('#vsort')){vSort=!vSort;drawVisited()}});
 {let rem=null;try{rem=localStorage.getItem('lp-loc')}catch(e){}
  if(rem==='1')startLoc();
  else if(rem!=='0')try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(s=>{if(s.state==='granted')startLoc()}).catch(()=>{})}catch(e){}}
@@ -640,11 +653,6 @@ document.addEventListener('click',e=>{if(e.target.closest('#locon'))startLoc();i
 let NOTES={};try{NOTES=JSON.parse(localStorage.getItem('lp-notes')||'{}')}catch(e){}
 let ntm=null;document.addEventListener('input',e=>{if(e.target.id!=='dnote')return;NOTES[D[cur].d]=e.target.value;clearTimeout(ntm);ntm=setTimeout(()=>{try{localStorage.setItem('lp-notes',JSON.stringify(NOTES))}catch(err){}const s=document.getElementById('nsaved');if(s)s.textContent='Guardado'},400)});
 
-
-/* cerca de mí */
-const NEAR=[["Gasolineras", "gasolinera"], ["Farmacias", "farmacia"], ["Supermercados", "supermercado"], ["Cajeros", "cajero automático"], ["Aparcamientos", "aparcamiento"], ["Urgencias y centros de salud", "centro de salud urgencias"], ["Cafeterías", "cafetería"], ["Miradores", "mirador"]];
-const nearUrl=q=>LOC?`https://www.google.com/maps/search/${encodeURIComponent(q)}/@${LOC.lat},${LOC.lon},14z`:`https://www.google.com/maps/search/${encodeURIComponent(q+' cerca de mí')}`;
-function drawNear(){const el=document.getElementById('near');if(!el)return;el.innerHTML=`<h4>Cerca de mí</h4><p class="fine" style="margin:0 0 10px">Abre Google Maps buscando alrededor de donde estéis${LOC?'':' (Maps usará la ubicación del móvil)'}.</p><div class="nearg">${NEAR.map(n=>`<a class="nbtn" href="${nearUrl(n[1])}" target="_blank" rel="noopener">${I('pin')}${n[0]}</a>`).join('')}</div><p class="fine">Emergencias: <b>112</b></p>`}
 
 const shownF=new Set();
 function fichaHtml(k){const f=k&&F[k];if(!f||shownF.has(k))return '';shownF.add(k);
