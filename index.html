@@ -145,6 +145,23 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .vrow input:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
 .vrow span{display:flex;flex-direction:column}.vrow small{color:var(--leaf);font-size:12.5px;font-weight:600}
 @media(max-width:420px){.tabs a{font-size:10.5px}}
+.wx{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.14);flex-wrap:wrap;min-height:58px}
+.wx:empty{display:none}
+.wxi{flex:none;width:40px;height:40px}.wxi svg{width:40px;height:40px}
+.wxm{display:flex;flex-direction:column;flex:1 1 180px}.wxm b{font:700 24px Outfit,sans-serif;line-height:1.1}.wxm b small{font-size:16px;opacity:.8}.wxm>small{font-size:13px;opacity:.88}
+.wxs{display:flex;gap:14px;font-size:13px;opacity:.95}.wxs b{display:block;font-size:15px}
+.wxl{font-size:14px;opacity:.92}.wxl a{color:#fff;font-weight:700}
+.wxset label{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.wxset input{min-height:40px;border-radius:10px;border:0;padding:0 10px;font:16px Inter,sans-serif}
+.baghelp{background:var(--surf);border:1px solid var(--line);border-radius:16px;margin-bottom:14px}
+.baghelp summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;min-height:50px}
+.baghelp summary::-webkit-details-marker{display:none}
+.baghelp ol{margin:0;padding:0 16px 14px 34px;font-size:15px;display:grid;gap:6px}
+.bgroup{margin-bottom:16px}.bgroup h3{font-size:18px;margin:0 0 4px}.bgroup .fine{margin:0 0 8px}
+.bi{display:flex;flex-direction:column}.bi small{color:var(--mute);font-size:13px}
+.bi em{font-style:normal;font-weight:700}.t-p{color:var(--lava)}.t-v{color:var(--sea)}.t-a{color:#7a5cc7}.t-m{color:var(--leaf)}.t-b{color:#c98a12}
+:root[data-theme=dark] .t-v{color:#6fd0dd}
+.dateinp{min-height:44px;border-radius:12px;border:1px solid var(--line);padding:0 12px;font:16px Inter,sans-serif;background:var(--surf2);color:var(--ink)}
 .note{margin:12px 0 0;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,var(--lava) 12%,var(--surf));font-size:15px;display:flex;gap:10px}
 .note b{color:var(--lava)}
 
@@ -255,7 +272,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
 
   <section class="view" id="v-info" aria-label="Información práctica">
     <div class="vh"><div><h2>Información práctica</h2><p>Lo básico para moverse por la isla.</p></div></div>
-    <div class="wallet" id="infocards"></div>
+    <div class="panel" style="margin-bottom:14px"><h4>Fecha de llegada</h4><p class="fine" style="margin:0 0 8px">Sirve para mostrar la previsión del tiempo de cada día. Se guarda solo en tu navegador.</p><input type="date" id="wxdate" class="dateinp"> <button type="button" class="copy" id="wxclear">Borrar</button></div><div class="wallet" id="infocards"></div>
   </section>
 
   <section class="view" id="v-visitados" aria-label="Visitados">
@@ -266,6 +283,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
   <section class="view" id="v-preparar" aria-label="Preparar">
     <div class="vh"><div><h2>Antes de salir</h2><p>Se guarda en este móvil.</p></div></div>
     <div class="prep"><div class="ring" id="ring"></div><ul class="checks" id="checks"></ul></div>
+    <div id="bagsec"></div>
   </section>
 
   <footer>Guía orientativa: horarios de visitas, restaurantes y tiempos de coche pueden cambiar; confirmad antes de ir. Los sitios marcados como visitados se guardan solo en el almacenamiento local de tu navegador.</footer>
@@ -433,11 +451,12 @@ function showDay(i,push=true){
   return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
  const eat=(EAT[x.d]||[]);const dm=dayMap(x);
  dayEl.style.setProperty('--c',x.c);
- dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8</div><h3>${x.t}</h3><p>${x.s}</p><div class="chips"><span class="chip">${x.drive}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
+ dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8</div><h3>${x.t}</h3><p>${x.s}</p><div class="wx" id="wx"></div><div class="chips"><span class="chip">${x.drive}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
   <div class="cta"><a class="btn" href="${routeLink(x)}" target="_blank" rel="noopener">${I('route')} Ruta en Google Maps</a><button class="btn ghost" type="button" id="expand">Desplegar todo</button></div>
   <div class="dbody"><ol class="tl">${items}</ol>${x.note?`<div class="note"><b>!</b><span>${x.note}</span></div>`:''}${roadsHtml(x)}</div></article>
   <aside class="side"><div class="panel"><h4>La ruta</h4><div class="minimap"><svg viewBox="${dm.vb}" role="img" aria-label="Mapa de la ruta del día">${dm.svg}</svg></div><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])}</li>`).join('')}</ol></div>
   ${eat.length?`<div class="panel"><h4>Dónde comer</h4><div class="food">${eat.map(foodItem).join('')}</div></div>`:''}</aside>`;
+ renderWx(i);
  if(push&&location.hash!=='#dia-'+(i+1))history.replaceState(null,'','#dia-'+(i+1));
  try{localStorage.setItem('lp-day',i)}catch(e){}
 }
@@ -494,12 +513,83 @@ function drawVisited(){
 document.getElementById('vlist').addEventListener('change',e=>{const k=e.target.dataset.k;if(k)toggleVis(k)});
 drawVisited();
 
+
+/* tiempo (Open-Meteo) */
+const WXK=['hotel','roque','taz','sal','tilos','paso','sc','mazo'];
+const WXN=['Los Cancajos','Roque de los Muchachos (2.400 m)','Puerto de Tazacorte','Fuencaliente','Los Tilos','El Paso','Santa Cruz','Villa de Mazo'];
+const WMO=c=>c===0?['sun','Despejado']:c<=2?['part','Poco nuboso']:c===3?['cloud','Nublado']:c<=48?['fog','Niebla']:c<=57?['rain','Llovizna']:c<=67?['rain','Lluvia']:c<=77?['snow','Nieve']:c<=82?['rain','Chubascos']:c<=86?['snow','Chubascos de nieve']:['storm','Tormenta'];
+const WI={sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ part:'<path d="M8 3v1.5M3.5 8H2m3.2-4.8 1 1M14 7a4 4 0 0 0-7.5-1.5"/><path d="M7 20h10a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 7.1 11 4.5 4.5 0 0 0 7 20Z"/>',
+ cloud:'<path d="M6.5 19h11a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.4 9.1 5 5 0 0 0 6.5 19Z"/>',
+ fog:'<path d="M4 9h16M3 13h18M5 17h14"/>',
+ rain:'<path d="M6.5 15h11a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.4 5.1 5 5 0 0 0 6.5 15Z"/><path d="m8 18-1 3m5-3-1 3m5-3-1 3"/>',
+ snow:'<path d="M6.5 14h11a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.4 4.1 5 5 0 0 0 6.5 14Z"/><path d="M8 18h.01M12 20h.01M16 18h.01"/>',
+ storm:'<path d="M6.5 14h11a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.4 4.1 5 5 0 0 0 6.5 14Z"/><path d="m13 14-3 4h4l-3 4"/>'};
+const wxIcon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${WI[n]}</svg>`;
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const todayISO=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Atlantic/Canary'}).format(new Date());return p};
+const qs=new URLSearchParams(location.search).get('llegada');
+if(qs&&/^\d{4}-\d{2}-\d{2}$/.test(qs)){try{localStorage.setItem('lp-start',qs)}catch(e){}}
+let START=null;try{START=localStorage.getItem('lp-start')}catch(e){}
+if(!START&&qs)START=qs;
+const getStart=()=>START;
+function setStart(v){START=v||null;try{v?localStorage.setItem('lp-start',v):localStorage.removeItem('lp-start')}catch(e){}loadWx()}
+let WX=null,wxErr=null,wxBusy=false;
+async function loadWx(){
+ const start=getStart();if(!start){WX=null;return}
+ wxBusy=true;wxErr=null;
+ const t0=todayISO(),last=addDays(t0,15);
+ const dates=D.map((_,i)=>addDays(start,i));
+ const s=dates.find(d=>d>=t0&&d<=last),e=[...dates].reverse().find(d=>d>=t0&&d<=last);
+ WX={start,dates,data:{}};
+ if(!s){wxBusy=false;renderWx(cur);return}
+ const ks=[...new Set(WXK)];
+ const url='https://api.open-meteo.com/v1/forecast?latitude='+ks.map(k=>P[k][0]).join(',')+'&longitude='+ks.map(k=>P[k][1]).join(',')+'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=Atlantic%2FCanary&start_date='+s+'&end_date='+e;
+ try{const r=await fetch(url);if(!r.ok)throw new Error(r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
+  ks.forEach((k,n)=>{const dd=j[n]&&j[n].daily;if(!dd)return;dd.time.forEach((t,m)=>{WX.data[k+'|'+t]={c:dd.weather_code[m],mx:dd.temperature_2m_max[m],mn:dd.temperature_2m_min[m],p:dd.precipitation_probability_max[m],w:dd.wind_speed_10m_max[m]}})});
+ }catch(err){wxErr=String(err)}
+ wxBusy=false;renderWx(cur);
+}
+function renderWx(i){
+ const el=document.getElementById('wx');if(!el)return;
+ const k=WXK[i],place=WXN[i];
+ if(!getStart()){el.innerHTML=`<form class="wxset" onsubmit="return false"><label>Para ver el tiempo de cada día, indica tu fecha de llegada <input type="date" id="wxdate"></label></form>`;return}
+ if(wxBusy||!WX){el.innerHTML=`<span class="wxl">Cargando el tiempo…</span>`;return}
+ const date=WX.dates[i],t0=todayISO();
+ const fd=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'));
+ if(date<t0){el.innerHTML=`<span class="wxl">${fd}: día pasado</span>`;return}
+ if(date>addDays(t0,15)){el.innerHTML=`<span class="wxl">${fd}: la previsión llega a 16 días vista; vuelve a mirarlo más cerca de la fecha.</span>`;return}
+ if(wxErr){el.innerHTML=`<span class="wxl">No se ha podido cargar la previsión. Revisa la conexión.</span>`;return}
+ const w=WX.data[k+'|'+date];if(!w){el.innerHTML=`<span class="wxl">Sin datos para ${fd}</span>`;return}
+ const [ic,tx]=WMO(w.c);
+ el.innerHTML=`<span class="wxi">${wxIcon(ic)}</span><span class="wxm"><b>${Math.round(w.mx)}° <small>/ ${Math.round(w.mn)}°</small></b><small>${tx} · ${esc(place)} · ${fd}</small></span><span class="wxs"><span>Lluvia <b>${w.p??'–'} %</b></span><span>Viento <b>${Math.round(w.w)} km/h</b></span></span>`;
+}
+
+
+/* mochila */
+const BAG=[["Llevar puesto en el avión", "Lo más voluminoso va encima, no dentro: así ganas casi un tercio de la mochila.", [["Botas o zapatillas de montaña", "1 par", "p"], ["Pantalón de trekking (mejor desmontable)", "1", "p"], ["Camiseta técnica", "1", "p"], ["Forro polar o sudadera", "1", "p"], ["Chaqueta impermeable cortavientos", "1", "p", "Si hace calor, en la mano o atada a la mochila"], ["Calcetines de trekking", "1 par", "p"]]], ["Bolsa de vacío 1 · Ropa de diario", "Enrolla cada prenda antes de meterla y saca el aire. Las bolsas enrollables no necesitan aspiradora: sirven igual para la vuelta.", [["Camisetas (técnicas o de algodón fino)", "4", "v"], ["Camiseta térmica de manga larga", "1", "v", "Para el Roque y la caminata del volcán"], ["Pantalón largo ligero para la tarde", "1", "v"], ["Pantalón corto", "1", "v"], ["Ropa interior", "5", "v", "Se lava a mitad de semana"], ["Calcetines", "4 pares", "v", "2 de ellos de trekking"], ["Pijama ligero", "1", "v"]]], ["Bolsa de vacío 2 · Playa y frío", "", [["Bañador", "1", "v"], ["Toalla de microfibra", "1", "v", "Ocupa una cuarta parte que una de algodón"], ["Gorro y guantes finos", "1", "v", "A 2.400 m puede helar"], ["Braga de cuello (buff)", "1", "v"]]], ["Sueltos en la mochila", "Van en los huecos alrededor de las bolsas.", [["Chanclas planas", "1 par", "m", "Pegadas a la espalda de la mochila"], ["Mochila plegable pequeña", "1", "m", "Para las excursiones del día"], ["Botella reutilizable", "1", "m", "Vacía al pasar el control"], ["Bolsa para la ropa sucia", "1", "m"], ["Gafas de sol", "1", "b"], ["Gorra", "1", "b"]]], ["Neceser · bolsa transparente de 1 L", "Líquidos en envases de 100 ml como máximo, arriba del todo para sacarlos en el control.", [["Cepillo y pasta de dientes (pequeña)", "1", "a"], ["Desodorante en barra", "1", "a"], ["Champú y gel en pastilla", "1", "a", "Los sólidos no cuentan como líquido"], ["Crema solar de viaje (≤100 ml)", "1", "a", "Comprad una grande allí"], ["Maquinilla y peine", "1", "a"], ["Jabón de viaje para lavar ropa", "1", "a"]]], ["Botiquín y documentos", "", [["Medicación personal y receta", "—", "b", "En un bolsillo accesible, nunca en el fondo"], ["Analgésico, tiritas y pastillas para el mareo", "—", "a", "El mareo, para el barco de las ballenas"], ["DNI", "1", "b"], ["Carnet de conducir", "1", "b"], ["Tarjeta de crédito del conductor", "1", "b", "Para el depósito del coche"], ["Móvil, cargador y cable", "1", "m"], ["Batería externa (≤100 Wh)", "1", "m", "Siempre en cabina, nunca en bodega"]]]];
+const BAGTIPS=["Medidas máximas del bulto bajo el asiento: 40 × 30 × 20 cm (≈24 litros). Medid la mochila antes, con todo dentro.", "Orden al cargar: chanclas pegadas a la espalda, luego las dos bolsas de vacío en plano, huecos rellenos con lo suelto y el neceser arriba.", "Lo pesado, cerca de la espalda: la mochila se lleva mejor y no se deforma por fuera de las medidas.", "Lavad una vez a mitad de semana (día 4 o 5) con el jabón de viaje: así basta con 4 camisetas y 5 mudas.", "La ropa en vacío se arruga: dejad fuera de la bolsa la prenda de la cena si os importa.", "Agua y crema solar grandes, compradlas al llegar: no cuentan como líquido en la vuelta si las dejáis allí."];
+const BTAG={"p": "Puesto", "v": "Bolsa de vacío", "a": "Bolsa 1 L", "m": "Mochila", "b": "Bolsillo"};
+let bagDone={};try{bagDone=JSON.parse(localStorage.getItem('lp-mochila')||'{}')}catch(e){}
+document.getElementById('bagsec').innerHTML=`<div class="vh" style="margin-top:30px"><div><h2>Mochila</h2><p>Todo para una semana en el bulto de bajo el asiento (40 × 30 × 20 cm), con dos bolsas de vacío. Cantidades por persona.</p></div></div>
+ <div class="prep"><div class="ring" id="bagring"></div><div><details class="baghelp"><summary><b>Cómo hacer que quepa todo</b>${I('chev','chev')}</summary><ol>${BAGTIPS.map(t=>`<li>${t}</li>`).join('')}</ol></details>
+ ${BAG.map((g,gi)=>`<div class="bgroup"><h3>${g[0]}</h3>${g[1]?`<p class="fine">${g[1]}</p>`:''}<ul class="checks">${g[2].map((it,ii)=>{const id=gi+'-'+ii;return `<li><label><input type="checkbox" data-b="${id}" ${bagDone[id]?'checked':''}><span class="bi"><b>${it[0]}</b><small><em class="t-${it[2]}">${BTAG[it[2]]}</em>${it[1]!=='—'?' · '+it[1]:''}${it[3]?' · '+it[3]:''}</small></span></label></li>`}).join('')}</ul></div>`).join('')}</div></div>`;
+const bagTotal=BAG.reduce((a,g)=>a+g[2].length,0);
+function updBag(){const n=Object.values(bagDone).filter(Boolean).length,f=n/bagTotal,R2=62,L=2*Math.PI*R2;
+ document.getElementById('bagring').innerHTML=`<svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="${R2}" fill="none" stroke="var(--line)" stroke-width="12"/><circle cx="75" cy="75" r="${R2}" fill="none" stroke="var(--sea)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${L}" stroke-dashoffset="${L*(1-f)}" transform="rotate(-90 75 75)"/><text x="75" y="82" text-anchor="middle" font-size="28" font-weight="800" font-family="Outfit" fill="var(--ink)">${n}/${bagTotal}</text></svg><p>${n===bagTotal?'¡Mochila hecha!':'cosas en la mochila'}</p>`}
+updBag();
+document.getElementById('bagsec').addEventListener('change',e=>{const id=e.target.dataset.b;if(!id)return;bagDone[id]=e.target.checked;try{localStorage.setItem('lp-mochila',JSON.stringify(bagDone))}catch(err){}updBag()});
+
 /* start */
 let st=-1;
 if(st<0){try{const s=localStorage.getItem('lp-day');if(s!==null)st=+s}catch(e){}}
 cur=st>=0&&st<8?st:0;
 if(!location.hash)history.replaceState(null,'','#dias');
 route();
+loadWx();
+document.addEventListener('change',e=>{if(e.target.id==='wxdate'){setStart(e.target.value);document.querySelectorAll('#wxdate').forEach(x=>x.value=e.target.value)}});
+document.getElementById('wxclear').addEventListener('click',()=>{setStart(null);document.querySelectorAll('#wxdate').forEach(x=>x.value='')});
+{const di=document.querySelector('#v-info #wxdate');if(di&&START)di.value=START}
 }
 </script>
 </body>
