@@ -89,6 +89,13 @@ button{font:inherit;color:inherit}
 .navd button:disabled{opacity:.35;cursor:default}
 .dbody{padding:6px 16px 16px}
 .cta{display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px 4px}
+.startdlg{border:0;border-radius:24px;padding:0;max-width:min(92vw,420px);width:100%;background:var(--surf);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.startdlg::backdrop{background:rgba(4,20,24,.6);backdrop-filter:blur(3px)}
+.startdlg form{padding:22px 22px 18px;display:grid;gap:12px}
+.startdlg h3{font-size:24px}.startdlg p{margin:0;color:var(--mute);font-size:15px}
+.startdlg input[type=date]{font:inherit;font-size:18px;min-height:50px;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:var(--surf2);color:var(--ink);width:100%}
+.startdlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.startdlg .ghost2{background:transparent;color:var(--mute);border:1px solid var(--line)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:14px;border:0;background:var(--lava);color:#fff;font-weight:700;text-decoration:none;cursor:pointer}
 .btn.ghost{background:var(--surf2);color:var(--ink);border:1px solid var(--line)}
 .btn svg{width:18px;height:18px}
@@ -315,6 +322,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
   <a class="btn" id="rgmaps" target="_blank" rel="noopener">Abrir en Google Maps</a>
  </div></div>
 <button type="button" class="totop" id="totop" aria-label="Volver arriba" title="Volver arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+<dialog class="startdlg" id="startdlg" aria-labelledby="sdt"><form method="dialog" id="startform"><h3 id="sdt">¿Qué día llegáis a La Palma?</h3><p>Con la fecha de llegada, cada día de la guía mostrará su fecha y la previsión del tiempo. Se guarda solo en este navegador y se puede cambiar en «Info».</p><input type="date" id="dlgdate" required aria-label="Fecha de llegada"><div class="row"><button type="button" class="btn ghost2" id="dlglater">Ahora no</button><button type="submit" class="btn" id="dlgok">Guardar</button></div></form></dialog>
 <div class="tabs"><nav aria-label="Secciones" id="tabs"></nav></div>
 
 <div class="offline" id="offline" hidden>Sin conexión: verás lo que ya hayas abierto antes (días, fichas y trozos de mapa ya vistos).</div>
@@ -518,7 +526,10 @@ window.addEventListener('hashchange',route);
 
 /* days */
 const week=document.getElementById('week'),dayEl=document.getElementById('day');
-week.innerHTML=D.map((x,i)=>{const[wd,n]=x.k.split(' ');return `<button role="tab" style="--c:${x.c}" data-i="${i}" aria-selected="false"  aria-label="${x.k}: ${x.t}"><small>${wd}</small><b>${n}</b><i></i></button>`}).join('');
+const stv=()=>{try{return START}catch(e){return null}};
+const dayDate=i=>{const s=stv();if(!s)return null;const d=new Date(addDays(s,i)+'T12:00:00Z');const f=o=>new Intl.DateTimeFormat('es-ES',Object.assign({timeZone:'UTC'},o)).format(d);return {wd:f({weekday:'short'}).replace('.',''),n:f({day:'numeric'}),full:f({weekday:'long',day:'numeric',month:'long'})}};
+function renderWeek(){week.innerHTML=D.map((x,i)=>{const dd=dayDate(i);const[wd,n]=x.k.split(' ');return `<button role="tab" style="--c:${x.c}" data-i="${i}" aria-selected="${i===cur}" aria-label="${x.k}${dd?' ('+dd.full+')':''}: ${x.t}"><small>${dd?dd.wd:wd}</small><b>${dd?dd.n:n}</b><i></i></button>`}).join('')}
+renderWeek();
 function routeLink(x){const hc=P.hotel[0]+','+P.hotel[1];const rs=seq(x).filter(k=>k!=='hotel'&&!(x.walk||[]).includes(k));const last=x.d==='d8'?rs.pop():null;const dest=last?P[last][0]+','+P[last][1]:hc;const wp=rs.map(k=>P[k][0]+','+P[k][1]).join('|');return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+hc+'&destination='+dest+(wp?'&waypoints='+encodeURIComponent(wp):'')}
 function foodItem(e){return `<details class="fd"><summary><span class="fi">${I('food')}</span><span class="nm"><b>${e[0]}${e[4]?'<span class="mine">Tu lista</span>':''}</b><small>${e[1]}</small></span>${I('chev','chev')}</summary><div class="more"><p>${e[2]}</p><div class="ctc">${e[3]?`<a class="lnk" href="${mq(e[3])}" target="_blank" rel="noopener">${I('map')} Abrir en Maps</a>`:''}${ctc(e[0])}</div></div></details>`}
 function dayMap(x){
@@ -697,7 +708,7 @@ function showDay(i,push=true){
   return `<li><span class="tm">${r[0]}</span><span class="dot${key?' f':''}${leaf?' g':''}">${key?'★':n}</span><details class="stop${key?' key':''}"><summary>${chk?`<button type="button" class="vchk" data-k="${k}" aria-pressed="${!!VIS[k]}" aria-label="Marcar ${esc(P[k][2])} como visitado">${I('check')}</button>`:''}<h4>${r[1]}</h4>${k&&k!=='hotel'&&k!=='apt'?`<button type="button" class="dist" data-k="${k}" title="Cómo llegar en Google Maps"></button>`:''}${key?`<span class="tag">${r[4]}</span>`:''}${more?I('chev','chev'):''}</summary>${more?`<div class="more">${more}</div>`:''}</details></li>`}).join('');
  const eat=(EAT[x.d]||[]);const dm=dayMap(x);
  dayEl.style.setProperty('--c',x.c);
- dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8</div><h3>${x.t}</h3><p>${x.s}</p><div class="wx" id="wx"></div><div class="chips"><span class="chip">${x.drive}</span><span class="chip">Tiempo aproximado de ruta: ${OUT[i]}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
+ dayEl.innerHTML=`<article class="dcard"><div class="dtop"><div class="lbl">Día ${i+1} de 8${(d=>d?' · '+d.full:'')(dayDate(i))}</div><h3>${x.t}</h3><p>${x.s}</p><div class="wx" id="wx"></div><div class="chips"><span class="chip">${x.drive}</span><span class="chip">Tiempo aproximado de ruta: ${OUT[i]}</span><span class="chip">${(n=>n+(n===1?' parada':' paradas'))(x.stops.filter(k=>k!=='hotel').length)}</span></div><div class="navd"><button type="button" data-step="-1" aria-label="Día anterior" ${i===0?'disabled':''}>‹</button><button type="button" data-step="1" aria-label="Día siguiente" ${i===7?'disabled':''}>›</button></div></div>
   <div class="cta"><a class="btn" href="${routeLink(x)}" target="_blank" rel="noopener">${I('route')} Ruta en Google Maps</a>${x.sub?`<a class="btn ghost" href="${'https://www.google.com/maps/dir/?api=1&travelmode=walking&origin='+P[x.sub[0]][0]+','+P[x.sub[0]][1]+'&destination='+P[x.sub[x.sub.length-1]][0]+','+P[x.sub[x.sub.length-1]][1]+'&waypoints='+encodeURIComponent(x.sub.slice(1,-1).map(k=>P[k][0]+','+P[k][1]).join('|'))}" target="_blank" rel="noopener">${I('route')} Ruta a pie por Santa Cruz</a>`:''}<button class="btn ghost" type="button" id="expand">Desplegar todo</button><button class="btn ghost" type="button" id="share">${I('share')} Compartir día</button></div>
   <div class="dbody"><ol class="tl">${items}</ol>${x.note?`<div class="note"><b>!</b><span>${x.note}</span></div>`:''}${roadsHtml(x)}<details class="notes"${NOTES[x.d]?' open':''}><summary><b>Notas del día</b><small id="nsaved"></small>${I('chev','chev')}</summary><textarea id="dnote" rows="4" placeholder="Apuntes, sitios que os recomiendan, gastos…">${esc(NOTES[x.d]||'')}</textarea></details></div></article>
   <aside class="side"><div class="panel"><h4>La ruta</h4><div class="lmap" id="daymap" role="region" aria-label="Mapa interactivo de la ruta del día"></div><p class="fine lnote">Mapa de OpenStreetMap: arrastra y haz zoom. La línea sigue las carreteras cuando el servicio de rutas responde.</p><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])} <button type="button" class="dist" data-k="${k}" title="Cómo llegar en Google Maps"></button></li>`).join('')}${x.lunch?`<li><span class="sq" style="border-radius:50%"></span>Comida: ${esc(P[x.lunch[0]][2])} <button type="button" class="dist" data-k="${x.lunch[0]}" title="Cómo llegar en Google Maps"></button></li>`:''}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
@@ -780,7 +791,7 @@ if(qs&&/^\d{4}-\d{2}-\d{2}$/.test(qs)){try{localStorage.setItem('lp-start',qs)}c
 let START=null;try{START=localStorage.getItem('lp-start')}catch(e){}
 if(!START&&qs)START=qs;
 const getStart=()=>START||todayISO();
-function setStart(v){START=v||null;setTimeout(()=>{markToday();markNow()},0);try{v?localStorage.setItem('lp-start',v):localStorage.removeItem('lp-start')}catch(e){}loadWx()}
+function setStart(v){START=v||null;setTimeout(()=>{renderWeek();markToday();if(document.getElementById('v-dias').classList.contains('on'))showDay(cur,false);markNow()},0);try{v?localStorage.setItem('lp-start',v):localStorage.removeItem('lp-start')}catch(e){}loadWx()}
 let WX=null,wxErr=null,wxBusy=false;
 async function loadWx(){
  const start=getStart();if(!start){WX=null;return}
@@ -865,6 +876,12 @@ loadWx();
 document.addEventListener('change',e=>{if(e.target.id==='wxdate'){setStart(e.target.value);document.querySelectorAll('#wxdate').forEach(x=>x.value=e.target.value)}});
 document.getElementById('wxclear').addEventListener('click',()=>{setStart(null);document.querySelectorAll('#wxdate').forEach(x=>x.value='')});
 {const di=document.querySelector('#v-info #wxdate');if(di&&START)di.value=START}
+renderWeek();markToday();
+/* primera visita sin fecha de llegada: pedirla */
+{const dlg=document.getElementById('startdlg'),inp=document.getElementById('dlgdate');let asked=null;try{asked=sessionStorage.getItem('lp-asked')}catch(e){}
+ if(dlg&&!START&&!asked&&typeof dlg.showModal==='function'){inp.value=todayISO();setTimeout(()=>{try{dlg.showModal()}catch(e){}},400)}
+ document.getElementById('startform').addEventListener('submit',()=>{if(!inp.value)return;setStart(inp.value);document.querySelectorAll('#wxdate').forEach(x=>x.value=inp.value)});
+ document.getElementById('dlglater').addEventListener('click',()=>{try{sessionStorage.setItem('lp-asked','1')}catch(e){}dlg.close()});}
 }
 </script>
 </body>
