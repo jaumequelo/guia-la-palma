@@ -1,5 +1,5 @@
 // Guía La Palma: funciona sin cobertura con lo ya visto.
-const V='lp-v8';
+const V='lp-v9';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
  'vendor/leaflet/leaflet.css','vendor/leaflet/leaflet.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.allSettled(SHELL.map(u=>c.add(new Request(u,{mode:u.startsWith('http')?'cors':'same-origin'})))))).then(()=>self.skipWaiting()))});
