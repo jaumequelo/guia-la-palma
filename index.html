@@ -238,6 +238,11 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .stops .sq{flex:none;width:16px;height:16px;margin:0 3px;border-radius:4px;border:3px solid var(--lava);background:#fff}
 .food{display:grid;gap:8px}
 .routedlg{border:0;border-radius:24px;padding:18px;max-width:min(94vw,440px);width:100%;max-height:86vh;overflow:auto;background:var(--surf);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.eml{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.eml li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surf2)}
+.eml .rn{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--lava);font:700 13px Outfit,sans-serif}
+.eml .nm{flex:1;display:flex;flex-direction:column}.eml small{color:var(--mute);font-size:13px}
+.lmap.emap{height:300px}.emap>svg{width:100%;height:auto;max-height:340px;display:block;border-radius:16px}
 .routedlg::backdrop{background:rgba(4,20,24,.6);backdrop-filter:blur(3px)}
 .rdh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.rdh h3{font-size:24px}
 .rdx{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surf2);font-size:22px;cursor:pointer;line-height:1}
@@ -560,6 +565,22 @@ function openAppRoute(i){const x=D[i];const st=seq(x).filter(k=>k!=='hotel'&&!(x
  try{RD.showModal()}catch(e){location.href=routeLink(x)}}
 RD.addEventListener('click',e=>{if(e.target===RD||e.target.closest('.rdx'))RD.close()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-route]');if(b){e.preventDefault();openAppRoute(+b.dataset.route)}});
+/* restaurantes del día en un mapa */
+const EM=document.createElement('dialog');EM.className='routedlg';EM.setAttribute('aria-label','Restaurantes del día en el mapa');document.body.appendChild(EM);
+function eatSvg(ks){const pts=[pj(P.hotel[0],P.hotel[1]),...ks.map(k=>pj(P[k][0],P[k][1]))];
+ const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1]));
+ let w=x1-x0+40,hh=y1-y0+40;const RR=300/420;if(w/hh>RR)hh=w/RR;else w=hh*RR;if(w<50){w=50;hh=w/RR}
+ const cx=(x0+x1)/2,cy=(y0+y1)/2,k=w/300,vb=[cx-w/2,cy-hh/2,w,hh].map(v=>v.toFixed(2)).join(' '),hp2=pts[0];
+ let g=island(false)+'<g class="you"></g>'+`<rect x="${hp2[0]-7*k}" y="${hp2[1]-7*k}" width="${14*k}" height="${14*k}" rx="${4*k}" fill="#fff" stroke="var(--lava)" stroke-width="${3*k}"><title>${esc(P.hotel[2])}</title></rect>`;
+ ks.forEach((q,n)=>{const[px,py]=pj(P[q][0],P[q][1]);g+=`<circle cx="${px}" cy="${py}" r="${10*k}" fill="#ff5a3c" stroke="#fff" stroke-width="${2*k}"><title>${esc(P[q][2])}</title></circle><text x="${px}" y="${py+3.8*k}" text-anchor="middle" font-size="${11*k}" font-weight="700" fill="#fff" font-family="Outfit">${n+1}</text>`});
+ return `<svg viewBox="${vb}" role="img" aria-label="Mapa de los restaurantes del día">${g}</svg>`}
+function openEatMap(i){const x=D[i];const rs=(EAT[x.d]||[]).filter(e=>RKN[e[0]]);if(!rs.length)return;const ks=rs.map(e=>RKN[e[0]]);const useL=typeof L!=='undefined'&&typeof lbase==='function';
+ EM.innerHTML=`<div class="rdh"><h3>Dónde comer · ${esc(x.k)}</h3><button type="button" class="rdx" aria-label="Cerrar">×</button></div>${useL?'<div class="lmap emap" id="eatmap"></div>':`<div class="emap">${eatSvg(ks)}</div>`}<ol class="eml">${rs.map((e,n)=>`<li><span class="rn">${n+1}</span><span class="nm"><b>${esc(e[0])}</b><small>${esc(e[1])} <span class="dist" data-k="${ks[n]}"></span></small><span class="ctc">${e[3]?`<a class="lnk" href="${mq(e[3])}" target="_blank" rel="noopener">${I('map')} Abrir en Maps</a>`:''}${ctc(e[0])}</span></span></li>`).join('')}</ol>`;
+ try{EM.showModal()}catch(err){}
+ if(useL){const o=lbase('eatmap');if(o){o.layer.clearLayers();L.marker([P.hotel[0],P.hotel[1]],{icon:hotelIcon()}).bindPopup('<b>'+esc(P.hotel[2])+'</b>').addTo(o.layer);ks.forEach((k,n)=>L.marker([P[k][0],P[k][1]],{icon:numIcon(n+1,'#ff5a3c')}).bindPopup(popup(k)).addTo(o.layer));o.pts=ks.map(k=>[P[k][0],P[k][1]]);setTimeout(()=>fitL(o),80)}}
+ refreshLoc()}
+EM.addEventListener('click',e=>{if(e.target===EM||e.target.closest('.rdx'))EM.close()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-eatmap]');if(b){e.preventDefault();openEatMap(+b.dataset.eatmap)}});
 function foodItem(e){return `<details class="fd"><summary><span class="fi">${I('food')}</span><span class="nm"><b>${e[0]}${e[4]?'<span class="mine">Tu lista</span>':''}</b><small>${e[1]}</small></span>${RKN[e[0]]?`<span class="dist" data-k="${RKN[e[0]]}" title="Distancia desde donde estás"></span>`:''}${I('chev','chev')}</summary><div class="more"><p>${e[2]}</p><div class="ctc">${e[3]?`<a class="lnk" href="${mq(e[3])}" target="_blank" rel="noopener">${I('map')} Abrir en Maps</a>`:''}${ctc(e[0])}</div></div></details>`}
 function dayMap(x){
  const pts=[hp,...seq(x).map(k=>pj(P[k][0],P[k][1]))];
@@ -741,7 +762,7 @@ function showDay(i,push=true){
   <div class="cta"><button type="button" class="btn" data-route="${i}" aria-haspopup="dialog">${I('route')} Ruta en…</button>${x.sub?`<a class="btn ghost" href="${'https://www.google.com/maps/dir/?api=1&travelmode=walking&origin='+P[x.sub[0]][0]+','+P[x.sub[0]][1]+'&destination='+P[x.sub[x.sub.length-1]][0]+','+P[x.sub[x.sub.length-1]][1]+'&waypoints='+encodeURIComponent(x.sub.slice(1,-1).map(k=>P[k][0]+','+P[k][1]).join('|'))}" target="_blank" rel="noopener">${I('route')} Ruta a pie por Santa Cruz</a>`:''}<button class="btn ghost" type="button" id="expand">Desplegar todo</button><button class="btn ghost" type="button" id="share">${I('share')} Compartir día</button></div>
   <div class="dbody"><ol class="tl">${items}</ol>${x.note?`<div class="note"><b>!</b><span>${x.note}</span></div>`:''}${roadsHtml(x)}<details class="notes"${NOTES[x.d]?' open':''}><summary><b>Notas del día</b><small id="nsaved"></small>${I('chev','chev')}</summary><textarea id="dnote" rows="4" placeholder="Apuntes, sitios que os recomiendan, gastos…">${esc(NOTES[x.d]||'')}</textarea></details></div></article>
   <aside class="side"><div class="panel"><h4>La ruta</h4><div class="lmap" id="daymap" role="region" aria-label="Mapa interactivo de la ruta del día"></div><p class="fine lnote">Mapa de OpenStreetMap: arrastra y haz zoom. La línea sigue las carreteras cuando el servicio de rutas responde.</p><ol class="stops"><li><span class="sq"></span>Alojamiento (salida)</li>${x.stops.map((k,n)=>`<li><span class="n" style="background:${(x.leaf||[]).includes(k)?'var(--leaf)':x.c}">${n+1}</span>${esc(P[k][2])} <button type="button" class="dist" data-k="${k}" title="Cómo llegar en Google Maps"></button></li>`).join('')}${x.lunch?`<li><span class="sq" style="border-radius:50%"></span>Comida: ${esc(P[x.lunch[0]][2])} <button type="button" class="dist" data-k="${x.lunch[0]}" title="Cómo llegar en Google Maps"></button></li>`:''}</ol>${x.sub?`<p class="fine" style="margin-top:10px"><b>A pie en Santa Cruz (${x.stops.indexOf('sc')+1}):</b> ${x.sub.map(k=>esc(P[k][2])).join(' → ')}</p>`:''}</div>
-  ${eat.length?`<div class="panel"><h4>Dónde comer</h4><div class="food">${eat.map(foodItem).join('')}</div></div>`:''}</aside>`;
+  ${eat.length?`<div class="panel"><h4>Dónde comer</h4><div class="food">${eat.map(foodItem).join('')}</div>${eat.some(e=>RKN[e[0]])?`<button type="button" class="btn ghost" data-eatmap="${i}" style="margin-top:10px;width:100%">${I('map')} Mostrar restaurantes en mapa</button>`:''}</div>`:''}</aside>`;
  renderWx(i);markNow();initDayMap(x);refreshLoc();
  if(push&&location.hash!=='#dia-'+(i+1))history.replaceState(null,'','#dia-'+(i+1));
  try{localStorage.setItem('lp-day',i)}catch(e){}
