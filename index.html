@@ -66,15 +66,15 @@ button{font:inherit;color:inherit}
 /* week strip */
 .week{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 10px;margin:0 -2px;scrollbar-width:none}
 .week::-webkit-scrollbar{display:none}
-.dayhead{position:sticky;top:0;z-index:15;background:var(--bg);padding-top:calc(8px + env(safe-area-inset-top));margin-top:-8px;box-shadow:0 0 0 100vmax var(--bg),0 8px 12px -10px rgba(0,0,0,.35);clip-path:inset(0 -100vmax -14px)}
-@media(min-width:900px){.dayhead{top:56px;padding-top:8px}}
-.dayhead .week{padding-top:10px}
-.dsum{display:none;align-items:center;gap:6px 12px;flex-wrap:wrap;margin:0 0 10px;padding:8px 12px;border-radius:14px;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in oklab,var(--c) 55%,#041c22));font-size:13.5px;line-height:1.3}
-.dayhead.compact .dsum{display:flex}
-.dsum .dst{flex:1 1 100%;font:700 15px Outfit,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dsum span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.dsum svg{width:18px;height:18px;flex:none}
-.dsum .dsi svg{width:22px;height:22px}
+.dsum{position:fixed;left:0;right:0;top:0;z-index:18;padding:calc(8px + env(safe-area-inset-top)) max(4vw,16px) 8px;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in oklab,var(--c) 55%,#041c22));box-shadow:0 4px 14px rgba(0,0,0,.25);transform:translateY(-110%);transition:transform .2s;pointer-events:none}
+.dsum.show{transform:none;pointer-events:auto}
+@media(min-width:900px){.dsum{top:56px;padding-top:8px;transform:none;opacity:0;transition:opacity .2s}.dsum.show{opacity:1}}
+@media(prefers-reduced-motion:reduce){.dsum{transition:none}}
+.dsin{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:12px;white-space:nowrap;overflow:hidden;font-size:14px;line-height:1.2}
+.dsin>span{display:inline-flex;align-items:center;gap:4px;flex:none}
+.dsin .dst{font:700 16px Outfit,sans-serif}
+.dsin svg{width:17px;height:17px;flex:none}.dsin .dsi svg{width:22px;height:22px}
+@media(max-width:400px){.dsin{gap:9px;font-size:13px}.dsin .dst{font-size:15px}}
 .week button{flex:none;scroll-snap-align:start;width:62px;height:78px;border-radius:18px;border:1px solid var(--line);background:var(--surf);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative}
 .week small{font-size:12px;color:var(--mute);text-transform:lowercase}
 .week b{font:700 22px Outfit,sans-serif}
@@ -358,7 +358,7 @@ footer{color:var(--mute);font-size:13px;padding:24px 0}
 <main class="wrap">
   <div class="locbar" id="locbar"></div>
   <section class="view" id="v-dias" aria-label="Días">
-    <div class="dayhead" id="dayhead"><div class="week" role="tablist" id="week" aria-label="Días del viaje"></div><div class="dsum" id="dsum" aria-live="polite"></div></div>
+    <div class="week" role="tablist" id="week" aria-label="Días del viaje"></div><div class="dsum" id="dsum" aria-hidden="true"></div>
     <div class="daygrid" id="day"></div>
   </section>
 
@@ -497,7 +497,7 @@ const coast=[[28.857,-17.92],[28.85,-17.86],[28.842,-17.80],[28.835,-17.775],[28
 
 const COL=['#2b7a8c','#7a5cc7','#0f8fa3','#d9532b','#2f8a4e','#c2410c','#3b6fd8','#b2367a'];
 D.forEach((x,i)=>x.c=COL[i]);
-const ic={clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+const ic={drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
  days:'<path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/>',
  map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/>',
  food:'<path d="M7 3v8m-3-8v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>',
@@ -876,13 +876,13 @@ async function loadWx(){
  }catch(err){wxErr=String(err)}
  wxBusy=false;renderWx(cur);
 }
-function wxShort(i){try{if(!getStart()||!WX||wxBusy||wxErr)return '';const w=WX.data[WXK[i]+'|'+WX.dates[i]];if(!w)return '';const [icn,txt]=WMO(w.c);return `<span class="dsi" title="${esc(txt)}">${wxIcon(icn)}<b>${Math.round(w.mx)}°/${Math.round(w.mn)}°</b></span><span>Lluvia ${w.p??'–'} %</span>`}catch(e){return ''}}
-function updSum(i){const el=document.getElementById('dsum');if(!el)return;const x=D[i];el.style.setProperty('--c',x.c);
+function wxShort(i){try{if(!getStart()||!WX||wxBusy||wxErr)return '';const w=WX.data[WXK[i]+'|'+WX.dates[i]];if(!w)return '';const [icn,txt]=WMO(w.c);return `<span class="dsi" title="${esc(txt)}">${wxIcon(icn)}<b>${Math.round(w.mx)}°/${Math.round(w.mn)}°</b></span><span title="Probabilidad de lluvia">${I('drop')}${w.p??'–'} %</span>`}catch(e){return ''}}
+function updSum(i){try{const el=document.getElementById('dsum');if(!el)return;const x=D[i];el.style.setProperty('--c',x.c);
  const dr=String(x.drive).split(' de coche')[0],tot=/^≈/.test(OUT[i])?OUT[i].split(' (')[0].replace(' hasta el aeropuerto',''):'';
- el.innerHTML=`<span class="dst">Día ${i+1} · ${x.t}</span>${wxShort(i)}<span title="${esc(x.drive)}">${I('car')} ${dr}</span>${tot?`<span title="Tiempo aproximado de ruta: ${esc(OUT[i])}">${I('clock')} ${tot} total</span>`:''}`}
+ el.innerHTML=`<div class="dsin"><span class="dst">Día ${i+1}</span>${wxShort(i)}<span title="Conducción: ${esc(x.drive)}">${I('car')}${dr}</span>${tot?`<span title="Tiempo total: ${esc(OUT[i])}">${I('clock')}${tot}</span>`:''}</div>`}catch(e){}}
 let dtopObs=null;
-function watchDtop(){const h=document.getElementById('dayhead'),t=dayEl.querySelector('.dtop');if(!h||!t||!('IntersectionObserver' in window))return;if(dtopObs)dtopObs.disconnect();
- const off=(innerWidth>=900?56:0)+110;dtopObs=new IntersectionObserver(es=>{es.forEach(e=>h.classList.toggle('compact',!e.isIntersecting&&e.boundingClientRect.top<off))},{rootMargin:`-${off}px 0px 0px 0px`});dtopObs.observe(t)}
+function watchDtop(){try{const h=document.getElementById('dsum'),t=document.querySelector('#day .dtop');if(!h||!t||!('IntersectionObserver' in window))return;if(dtopObs)dtopObs.disconnect();
+ const off=(innerWidth>=900?56:0)+50;dtopObs=new IntersectionObserver(es=>{es.forEach(e=>h.classList.toggle('show',!e.isIntersecting&&e.boundingClientRect.top<off&&document.getElementById('v-dias').classList.contains('on')))},{rootMargin:`-${off}px 0px 0px 0px`});dtopObs.observe(t)}catch(e){}}
 function renderWx(i){
  updSum(i);const el=document.getElementById('wx');if(!el)return;
  const k=WXK[i],place=WXN[i];
